@@ -1,6 +1,6 @@
 import Header from '../component/header/header.js';
 import { authCheckReverse, prependChild, validEmail } from '../utils/function.js';
-import { userLogin } from '../api/loginRequest.js';
+import { userLogin } from '../services/loginRequest.js';
 
 const HTTP_OK = 200;
 const MAX_PASSWORD_LENGTH = 8;

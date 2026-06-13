@@ -1,7 +1,7 @@
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheckReverse, prependChild, validEmail, validPassword, validNickname } from '../utils/function.js';
-import { userSignup, fileUpload } from '../api/signupRequest.js';
+import { userSignup, fileUpload } from '../services/signupRequest.js';
 
 const MAX_PASSWORD_LENGTH = 20;
 const HTTP_OK = 200;

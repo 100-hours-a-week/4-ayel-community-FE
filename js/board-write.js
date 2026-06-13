@@ -1,7 +1,7 @@
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheck, getQueryString, getServerUrl, prependChild, resolveImageUrl } from '../utils/function.js';
-import { createPost, fileUpload, updatePost, getBoardItem } from '../api/board-writeRequest.js';
+import { createPost, fileUpload, updatePost, getBoardItem } from '../services/board-writeRequest.js';
 
 const HTTP_OK = 200;
 const HTTP_CREATED = 201;

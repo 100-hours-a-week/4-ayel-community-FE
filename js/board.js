@@ -2,7 +2,7 @@ import CommentItem from '../component/comment/comment.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheck, getServerUrl, prependChild, padTo2Digits, resolveImageUrl } from '../utils/function.js';
-import { getPost, deletePost, writeComment, getComments, likePost, unlikePost } from '../api/boardRequest.js';
+import { getPost, deletePost, writeComment, getComments, likePost, unlikePost } from '../services/boardRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 const MAX_COMMENT_LENGTH = 500;

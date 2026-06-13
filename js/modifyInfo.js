@@ -1,8 +1,8 @@
-import { checkNickname, fileUpload } from '../api/signupRequest.js';
+import { checkNickname, fileUpload } from '../services/signupRequest.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheck, prependChild, getServerUrl, resolveImageUrl, validNickname } from '../utils/function.js';
-import { userModify, userDelete } from '../api/modifyInfoRequest.js';
+import { userModify, userDelete } from '../services/modifyInfoRequest.js';
 import { requestJson } from '../utils/request.js';
 
 const emailTextElement = document.querySelector('#id');

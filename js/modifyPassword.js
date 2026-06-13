@@ -1,4 +1,4 @@
-import { changePassword } from '../api/modifyPasswordRequest.js';
+import { changePassword } from '../services/modifyPasswordRequest.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheck, getServerUrl, prependChild, resolveImageUrl, validPassword } from '../utils/function.js';
