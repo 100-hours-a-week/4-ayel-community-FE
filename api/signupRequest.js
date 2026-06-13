@@ -2,7 +2,7 @@ import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
 export const userSignup = async data => {
-    const result = await requestJson(`${getServerUrl()}/v1/auth/signup`, {
+    const result = await requestJson(`${getServerUrl()}/users`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -12,39 +12,22 @@ export const userSignup = async data => {
     return result;
 };
 
-export const checkEmail = async email => {
-    const result = await requestJson(
-        `${getServerUrl()}/v1/users/email/check?email=${email}`,
-        {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        },
-    );
+export const fileUpload = async (userId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const result = await requestJson(`${getServerUrl()}/users/${userId}/files`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+    });
     return result;
 };
 
-export const checkNickname = async nickname => {
-    const result = await requestJson(
-        `${getServerUrl()}/v1/users/nickname/check?nickname=${nickname}`,
-        {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        },
-    );
-    return result;
-};
-
-export const fileUpload = async file => {
-    const result = await requestJson(
-        `${getServerUrl()}/v1/users/upload/profile-image`,
-        {
-            method: 'POST',
-            body: file,
-        },
-    );
+export const checkNickname = async (nickname) => {
+    const result = await requestJson(`${getServerUrl()}/users/nickname?nickname=${nickname}`, {
+        method: 'GET',
+        credentials: 'include',
+    });
     return result;
 };

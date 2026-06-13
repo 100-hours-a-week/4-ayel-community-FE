@@ -10,19 +10,16 @@ const BoardItem = (
     commentCount,
     likeCount,
 ) => {
-    // 파라미터 값이 없으면 리턴
     if (
         !date ||
         !title ||
         viewCount === undefined ||
         likeCount === undefined ||
-        commentCount === undefined ||
-        !writer
+        commentCount === undefined
     ) {
         return;
     }
 
-    // 날짜 포맷 변경 YYYY-MM-DD hh:mm:ss
     const dateObj = new Date(date);
     const year = dateObj.getFullYear();
     const month = dateObj.getMonth() + 1;
@@ -35,7 +32,8 @@ const BoardItem = (
 
     const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
     const profileImageUrl = resolveImageUrl(imgUrl, DEFAULT_PROFILE_IMAGE);
-    // const API_HOST = getServerUrl();
+
+    const displayWriter = writer && writer.trim() !== '' ? writer : '(알 수 없음)';
 
     return `
     <a href="/html/board.html?id=${postId}">
@@ -51,7 +49,7 @@ const BoardItem = (
             <picture class="img">
                 <img src="${`${profileImageUrl}`}" alt="img">
             </picture>
-            <h2 class="writer">${writer}</h2>
+            <h2 class="writer">${displayWriter}</h2>
         </div>
         </div>
     </a>

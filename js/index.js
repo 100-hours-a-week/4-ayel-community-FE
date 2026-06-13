@@ -7,12 +7,11 @@ import { getPosts, searchPosts } from '../api/indexRequest.js';
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 const HTTP_NOT_AUTHORIZED = 401;
 const SCROLL_THRESHOLD = 0.9;
-const INITIAL_OFFSET = 5;
 const ITEMS_PER_LOAD = 5;
 const DEFAULT_SORT = 'recent';
 let currentKeyword = '';
 let currentSort = DEFAULT_SORT;
-let offset = 0;
+let cursor = null;
 let isEnd = false;
 let isProcessing = false;
 
@@ -25,19 +24,13 @@ const updateSortVisibility = () => {
 };
 
 // getBoardItem 함수
-const getBoardItem = async (offsetValue = 0, limitValue = 5) => {
-    const result =
-        currentKeyword.trim() === ''
-            ? await getPosts(offsetValue, limitValue)
-            : await searchPosts(
-                  currentKeyword,
-                  offsetValue,
-                  limitValue,
-                  currentSort,
-              );
-    if (!result.ok) {
-        throw new Error('Failed to load post list.');
-    }
+const getBoardItem = async (cursorValue = null, limitValue = 5) => {
+    const result = currentKeyword.trim() === ''
+        ? await getPosts(cursorValue, limitValue)
+        : await searchPosts(currentKeyword, cursorValue, limitValue, currentSort);
+
+    console.log('게시글 응답', result);
+    if (!result.ok) throw new Error('Failed to load post list.');
     return result.data;
 };
 
@@ -45,18 +38,16 @@ const setBoardItem = boardData => {
     const boardList = document.querySelector('.boardList');
     if (boardList && boardData) {
         const itemsHtml = boardData
-            .map(data =>
-                BoardItem(
-                    data.id,
-                    data.createdAt,
-                    data.title,
-                    data.viewCount,
-                    data.author ? data.author.profileImageUrl : null,
-                    data.author ? data.author.nickname : null,
-                    data.commentCount,
-                    data.likeCount,
-                ),
-            )
+            .map(data => BoardItem(
+                data.postId,
+                data.createdAt,
+                data.title,
+                data.viewCount,
+                data.profileFileUrl || data.profileImageUrl || null,
+                data.nickname,
+                data.commentCount,
+                data.likeCount,
+            ))
             .join('');
         boardList.innerHTML += ` ${itemsHtml}`;
     }
@@ -64,9 +55,7 @@ const setBoardItem = boardData => {
 
 const resetBoardList = () => {
     const boardList = document.querySelector('.boardList');
-    if (boardList) {
-        boardList.innerHTML = '';
-    }
+    if (boardList) boardList.innerHTML = '';
 };
 
 const loadBoardItems = async ({ reset = false } = {}) => {
@@ -75,17 +64,23 @@ const loadBoardItems = async ({ reset = false } = {}) => {
 
     try {
         if (reset) {
-            offset = 0;
+            cursor = null;
             isEnd = false;
             resetBoardList();
         }
-        const items = await getBoardItem(offset, ITEMS_PER_LOAD);
+
+        const result = await getBoardItem(cursor, ITEMS_PER_LOAD);
+        console.log('result=', result);
+
+        const items = result.posts ?? [];
         if (!items || items.length === 0) {
-            isEnd = true;
+            isEnd = !result.hasNext;
             return;
         }
+
         setBoardItem(items);
-        offset += ITEMS_PER_LOAD;
+        cursor = result.nextCursor;
+        isEnd = !result.hasNext;
     } catch (error) {
         console.error('Error fetching items:', error);
         isEnd = true;
@@ -133,38 +128,55 @@ const addSortEvent = () => {
 
 // 스크롤 이벤트 추가
 const addInfinityScrollEvent = () => {
-    offset = INITIAL_OFFSET;
-    isEnd = false;
-    isProcessing = false;
-
     window.addEventListener('scroll', async () => {
-        const hasScrolledToThreshold =
-            window.scrollY + window.innerHeight >=
-            document.documentElement.scrollHeight * SCROLL_THRESHOLD;
+        const hasScrolledToThreshold = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight * SCROLL_THRESHOLD;
         if (hasScrolledToThreshold) {
             loadBoardItems();
         }
     });
 };
 
+const addWriteEvent = isLoggedIn => {
+    const writeBtn = document.querySelector('#writeBtn')
+        || document.querySelector('.writeBtn')
+        || document.querySelector('.searchButton + button')
+        || document.querySelector('.searchButton + a')
+        || Array.from(document.querySelectorAll('button, a')).find(el => el.textContent.includes('게시글 작성'));
+
+    if (!writeBtn) return;
+
+    writeBtn.addEventListener('click', event => {
+        if (!isLoggedIn) {
+            event.preventDefault();
+            Dialog('로그인 필요', '로그인이 필요한 기능입니다. 로그인 하시겠습니까?', () => {
+                window.location.href = '/html/login.html';
+            });
+        }
+    });
+};
+
 const init = async () => {
     try {
-        const response = await authCheck();
-        const data = await response.json();
-        if (response.status === HTTP_NOT_AUTHORIZED) {
-            window.location.href = '/html/login.html';
-            return;
+        const res = await fetch(`${getServerUrl()}/auth/check`, { credentials: 'include' });
+        let profileImageUrl = DEFAULT_PROFILE_IMAGE;
+        let isLoggedIn = false;
+
+        if (res.ok) {
+            const data = await res.json();
+
+            let url = localStorage.getItem('profileImageUrl') || data.data.profileFileUrl || data.data.profileImageUrl || null;
+            if (url) {
+                url = url.replace(/\\/g, '/');
+                if (!url.startsWith('/') && !url.startsWith('blob:')) {
+                    url = '/' + url;
+                }
+            }
+
+            profileImageUrl = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
+            isLoggedIn = true;
         }
 
-        const profileImageUrl = resolveImageUrl(
-            data.data.profileImageUrl,
-            DEFAULT_PROFILE_IMAGE,
-        );
-
-        prependChild(
-            document.body,
-            Header('Community', 0, profileImageUrl),
-        );
+        prependChild(document.body, Header('Community', 0, profileImageUrl, isLoggedIn));
 
         updateSortVisibility();
         await loadBoardItems({ reset: true });
@@ -172,6 +184,7 @@ const init = async () => {
         addSearchEvent();
         addSortEvent();
         addInfinityScrollEvent();
+        addWriteEvent(isLoggedIn);
     } catch (error) {
         console.error('Initialization failed:', error);
     }

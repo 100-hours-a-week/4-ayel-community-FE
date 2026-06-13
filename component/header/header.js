@@ -1,45 +1,49 @@
 import { getServerUrl } from '../../utils/function.js';
 
-const headerDropdownMenu = () => {
+const headerDropdownMenu = (isLoggedIn) => {
     const wrap = document.createElement('div');
-
-    const modifyInfoLink = document.createElement('a');
-    const modifyPasswordLink = document.createElement('a');
-    const logoutLink = document.createElement('a');
-
-    modifyInfoLink.textContent = '회원정보수정';
-    modifyPasswordLink.textContent = '비밀번호수정';
-    logoutLink.textContent = '로그아웃';
-
-    modifyInfoLink.href = '/html/modifyInfo.html';
-    modifyPasswordLink.href = '/html/modifyPassword.html';
-    logoutLink.addEventListener('click', async () => {
-        try {
-            await fetch(`${getServerUrl()}/v1/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-            });
-        } finally {
-            location.href = '/html/login.html';
-        }
-    });
-
     wrap.classList.add('drop');
 
-    wrap.appendChild(modifyInfoLink);
-    wrap.appendChild(modifyPasswordLink);
-    wrap.appendChild(logoutLink);
+    if (isLoggedIn) {
+        const modifyInfoLink = document.createElement('a');
+        const modifyPasswordLink = document.createElement('a');
+        const logoutLink = document.createElement('a');
+
+        modifyInfoLink.textContent = '회원정보수정';
+        modifyPasswordLink.textContent = '비밀번호수정';
+        logoutLink.textContent = '로그아웃';
+
+        modifyInfoLink.href = '/html/modifyInfo.html';
+        modifyPasswordLink.href = '/html/modifyPassword.html';
+        logoutLink.addEventListener('click', async () => {
+            try {
+                await fetch(`${getServerUrl()}/auth`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                });
+            } finally {
+                location.href = '/html/login.html';
+            }
+        });
+
+        wrap.appendChild(modifyInfoLink);
+        wrap.appendChild(modifyPasswordLink);
+        wrap.appendChild(logoutLink);
+    } else {
+        const loginLink = document.createElement('a');
+        loginLink.textContent = '로그인';
+        loginLink.href = '/html/login.html';
+        wrap.appendChild(loginLink);
+    }
 
     return wrap;
 };
 
-// title : 헤더 타이틀
-// leftBtn: 헤더 좌측 기능. 0 : None , 1: back , 2 : index
-// rightBtn : 헤더 우측 기능. image 주소값 들어옴
 const Header = (
     title,
     leftBtn = 0,
     profileImage = null,
+    isLoggedIn = false,
 ) => {
     let leftBtnElement;
     let rightBtnElement;
@@ -69,10 +73,10 @@ const Header = (
         profileElement.loading = 'eager';
         profileElement.src = profileImage;
 
-        const Drop = headerDropdownMenu();
+        const Drop = headerDropdownMenu(isLoggedIn);
         Drop.classList.add('none');
 
-        profileElement.addEventListener('click', () => {
+        profileElement.addEventListener('click', (event) => {
             Drop.classList.toggle('none');
             event.stopPropagation();
         });

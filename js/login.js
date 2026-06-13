@@ -1,9 +1,5 @@
 import Header from '../component/header/header.js';
-import {
-    authCheckReverse,
-    prependChild,
-    validEmail,
-} from '../utils/function.js';
+import { authCheckReverse, prependChild, validEmail } from '../utils/function.js';
 import { userLogin } from '../api/loginRequest.js';
 
 const HTTP_OK = 200;
@@ -24,20 +20,12 @@ const loginClick = async () => {
 
     const { ok, status, code } = await userLogin(email, password);
     if (!ok) {
-        updateHelperText(
-            helperTextElement,
-            code === 'INVALID_INPUT'
-                ? '*입력값을 확인해주세요.'
-                : '*입력하신 계정 정보가 정확하지 않았습니다.',
-        );
+        updateHelperText(helperTextElement, code === 'INVALID_INPUT' ? '*입력값을 확인해주세요.' : '*입력하신 계정 정보가 정확하지 않았습니다.');
         return;
     }
 
     if (status !== HTTP_OK) {
-        updateHelperText(
-            helperTextElement,
-            '*입력하신 계정 정보가 정확하지 않았습니다.',
-        );
+        updateHelperText(helperTextElement, '*입력하신 계정 정보가 정확하지 않았습니다.');
         return;
     }
     updateHelperText(helperTextElement);
@@ -51,19 +39,9 @@ const observeSignupData = () => {
     const helperTextElement = document.querySelector('.helperText');
 
     const isValidEmail = validEmail(email);
-    updateHelperText(
-        helperTextElement,
-        isValidEmail || !email
-            ? ''
-            : '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)',
-    );
+    updateHelperText(helperTextElement, isValidEmail || !email ? '' : '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)');
 
-    button.disabled = !(
-        email &&
-        isValidEmail &&
-        password &&
-        password.length >= MAX_PASSWORD_LENGTH
-    );
+    button.disabled = !(email && isValidEmail && password && password.length >= MAX_PASSWORD_LENGTH);
     button.style.backgroundColor = button.disabled ? '#ACA0EB' : '#7F6AEE';
 };
 
@@ -78,20 +56,14 @@ const eventSet = () => {
 
     ['id', 'pw'].forEach(field => {
         const inputElement = document.getElementById(field);
-        inputElement.addEventListener('input', event =>
-            onChangeHandler(event, field === 'id' ? 'id' : 'password'),
-        );
+        inputElement.addEventListener('input', event => onChangeHandler(event, field === 'id' ? 'id' : 'password'));
 
         if (field === 'id') {
-            inputElement.addEventListener('focusout', event =>
-                lottieAnimation(validEmail(event.target.value) ? 1 : 2),
-            );
+            inputElement.addEventListener('focusout', event => lottieAnimation(validEmail(event.target.value) ? 1 : 2));
         }
     });
 
-    document
-        .getElementById('id')
-        .addEventListener('input', event => validateEmail(event.target));
+    document.getElementById('id').addEventListener('input', event => validateEmail(event.target));
 };
 
 const onChangeHandler = (event, uid) => {
@@ -107,12 +79,11 @@ const validateEmail = input => {
 let lottieInstance = null;
 const lottieAnimation = type => {
     const container = document.getElementById('lottie-animation');
-    const animationPaths = [
-        '/public/check_anim.json',
-        '/public/denied_anim.json',
-    ];
+    const animationPaths = ['/public/check_anim.json', '/public/denied_anim.json'];
+
     if (lottieInstance) lottieInstance.destroy();
     container.innerHTML = '';
+
     lottieInstance = window.lottie.loadAnimation({
         container,
         renderer: 'svg',
@@ -125,7 +96,7 @@ const lottieAnimation = type => {
 const init = async () => {
     await authCheckReverse();
     observeSignupData();
-    prependChild(document.body, Header('커뮤니티', 0));
+    prependChild(document.body, Header('커뮤니티', 2));
     eventSet();
     localStorage.clear();
 };

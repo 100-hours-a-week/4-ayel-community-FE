@@ -12,8 +12,8 @@ export const getServerUrl = () => {
 
     const host = window.location.hostname;
     return host.includes('localhost')
-        ? 'http://localhost:3000'
-        : `http://${host}:3000`;
+        ? 'http://localhost:8080'
+        : `http://${host}:8080`;
 };
 
 export const resolveImageUrl = (url, fallback = null) => {
@@ -23,25 +23,38 @@ export const resolveImageUrl = (url, fallback = null) => {
 };
 
 export const serverSessionCheck = async () => {
-    const res = await fetch(`${getServerUrl()}/v1/auth/check`, {
-        method: 'GET',
-        credentials: 'include',
-    });
-    return res;
-};
+    try {
+        const res = await fetch(`${getServerUrl()}/auth/check`, {
+            method: 'GET',
+            credentials: 'include',
+        });
 
+        return res;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
 export const authCheck = async () => {
-    const HTTP_OK = 200;
     const response = await serverSessionCheck();
-    if (!response || response.status !== HTTP_OK)
+
+    if (!response || !response.ok) {
         location.href = '/html/login.html';
+        return null;
+    }
+
     return response;
 };
 
 export const authCheckReverse = async () => {
-    const response = await serverSessionCheck();
-    if (response && response.ok) {
-        location.href = '/';
+    try {
+        const response = await serverSessionCheck();
+
+        if (response && response.ok) {
+            location.href = '/';
+        }
+    } catch (error) {
+        console.error(error);
     }
 };
 // 이메일 유효성 검사

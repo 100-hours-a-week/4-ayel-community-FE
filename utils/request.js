@@ -11,7 +11,11 @@ export const parseJsonSafe = async response => {
 };
 
 export const requestJson = async (url, options = {}) => {
-    const response = await fetch(url, options);
+    const fetchOptions = {
+        credentials: 'include',
+        ...options,
+    };
+    const response = await fetch(url, fetchOptions);
     const body = await parseJsonSafe(response);
     return {
         response,
