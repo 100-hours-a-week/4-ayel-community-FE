@@ -157,12 +157,17 @@ const addWriteEvent = isLoggedIn => {
 
 const init = async () => {
     try {
-        const res = await fetch(`${getServerUrl()}/auth/check`, { credentials: 'include' });
+        const res = await fetch(`${getServerUrl()}/auth/check`, {
+            credentials: 'include'
+        });
+
         let profileImageUrl = DEFAULT_PROFILE_IMAGE;
         let isLoggedIn = false;
 
         if (res.ok) {
             const data = await res.json();
+
+            isLoggedIn = data.success === true;
 
             let url = localStorage.getItem('profileImageUrl') || data.data.profileFileUrl || data.data.profileImageUrl || null;
             if (url) {
@@ -173,7 +178,6 @@ const init = async () => {
             }
 
             profileImageUrl = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
-            isLoggedIn = true;
         }
 
         prependChild(document.body, Header('Community', 0, profileImageUrl, isLoggedIn));
