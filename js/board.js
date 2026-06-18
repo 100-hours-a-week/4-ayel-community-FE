@@ -219,7 +219,7 @@ const init = async () => {
             commentBtnElement.addEventListener('click', addComment);
             commentBtnElement.disabled = true;
 
-            let url = localStorage.getItem('profileImageUrl') || myInfo.profileFileUrl || myInfo.profileImageUrl || null;
+            let url = myInfo.profileFileUrl || myInfo.profileImageUrl || null;
             if (url) {
                 url = url.replace(/\\/g, '/');
                 if (!url.startsWith('/') && !url.startsWith('blob:')) {

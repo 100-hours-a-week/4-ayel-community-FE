@@ -222,7 +222,7 @@ const init = async () => {
     const data = await dataResponse.json();
     const modifyId = checkModifyMode();
 
-    let url = localStorage.getItem('profileImageUrl') || data.data.profileFileUrl || data.data.profileImageUrl || null;
+    let url = data.data.profileFileUrl || data.data.profileImageUrl || null;
     if (url) {
         url = url.replace(/\\/g, '/');
         if (!url.startsWith('/') && !url.startsWith('blob:')) {

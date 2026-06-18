@@ -153,7 +153,7 @@ const init = async () => {
     const dataResponse = await authCheck();
     authData = await dataResponse.json();
 
-    let url = localStorage.getItem('profileImageUrl') || authData.data.profileFileUrl || authData.data.profileImageUrl || null;
+    let url = authData.data.profileFileUrl || authData.data.profileImageUrl || null;
     if (url) {
         url = url.replace(/\\/g, '/');
         if (!url.startsWith('/') && !url.startsWith('blob:')) {

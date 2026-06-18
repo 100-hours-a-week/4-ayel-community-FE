@@ -164,15 +164,18 @@ const init = async () => {
         if (res.ok) {
             const data = await res.json();
 
-            let url = localStorage.getItem('profileImageUrl') || data.data.profileFileUrl || data.data.profileImageUrl || null;
+            let url = data.data.profileFileUrl || data.data.profileImageUrl || null;
+
             if (url) {
                 url = url.replace(/\\/g, '/');
+
                 if (!url.startsWith('/') && !url.startsWith('blob:')) {
                     url = '/' + url;
                 }
             }
 
             profileImageUrl = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
+
             isLoggedIn = true;
         }
 
