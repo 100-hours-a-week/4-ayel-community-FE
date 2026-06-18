@@ -8,6 +8,8 @@ const HTTP_OK = 200;
 const HTTP_CREATED = 201;
 
 let selectedFile = null;
+let isEmailValid = false;
+let isNicknameValid = false;
 
 const signupData = {
     email: '',
@@ -21,7 +23,7 @@ const getSignupData = (event) => {
     if (event) event.preventDefault();
 
     const { email, password, passwordConfirm, nickname } = signupData;
-    if (!email || !password || !passwordConfirm || !nickname) {
+    if (!email || !password || !passwordConfirm || !nickname || !isEmailValid || !isNicknameValid) {
         Dialog('필수 입력 사항', '모든 값을 입력해주세요.');
         return false;
     }
@@ -41,7 +43,7 @@ const sendSignupData = async () => {
     }
 
     const result = await userSignup(props);
-    const { status, code, data } = result;
+    const { status, data, body } = result;
 
     if (status === HTTP_CREATED) {
         if (selectedFile && data && data.userId) {
@@ -50,15 +52,7 @@ const sendSignupData = async () => {
         localStorage.removeItem('profileImageUrl');
         location.href = '/html/login.html';
     } else {
-        if (code === 'ALREADY_EXIST_EMAIL') {
-            Dialog('회원 가입 실패', '이미 사용 중인 이메일입니다.');
-        } else if (code === 'ALREADY_EXIST_NICKNAME') {
-            Dialog('회원 가입 실패', '이미 사용 중인 닉네임입니다.');
-        } else if (code === 'INVALID_INPUT') {
-            Dialog('회원 가입 실패', '입력값을 확인해주세요.');
-        } else {
-            Dialog('회원 가입 실패', '잠시 뒤 다시 시도해 주세요', () => {});
-        }
+        Dialog('회원 가입 실패', (body && body.message) || '잠시 뒤 다시 시도해 주세요');
         localStorage.removeItem('profileImageUrl');
     }
 };
@@ -84,23 +78,21 @@ const inputEventHandler = async (event, uid) => {
         const value = event.target.value;
         const isValidEmail = validEmail(value);
         const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
-        let isComplete = false;
 
         if (!helperElement) return;
 
         if (value == '' || value == null) {
             helperElement.textContent = '*이메일을 입력해주세요.';
+            isEmailValid = false;
+            signupData.email = '';
         } else if (!isValidEmail) {
             helperElement.textContent = '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)';
+            isEmailValid = false;
+            signupData.email = '';
         } else {
             helperElement.textContent = '';
-            isComplete = true;
-        }
-
-        if (isComplete) {
             signupData.email = value;
-        } else {
-            signupData.email = '';
+            isEmailValid = true;
         }
     } else if (uid == 'pw') {
         const value = event.target.value;
@@ -137,25 +129,54 @@ const inputEventHandler = async (event, uid) => {
         const value = event.target.value;
         const isValidNickname = validNickname(value);
         const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
-        let isComplete = false;
 
         if (value == '' || value == null) {
             helperElement.textContent = '*닉네임을 입력해주세요.';
+            isNicknameValid = false;
+            signupData.nickname = '';
         } else if (value.includes(' ')) {
             helperElement.textContent = '*뛰어쓰기를 없애주세요.';
+            isNicknameValid = false;
+            signupData.nickname = '';
         } else if (value.length > 10) {
             helperElement.textContent = '*닉네임은 최대 10자까지 작성 가능합니다.';
+            isNicknameValid = false;
+            signupData.nickname = '';
         } else if (!isValidNickname) {
             helperElement.textContent = '*닉네임에 특수 문자는 사용할 수 없습니다.';
+            isNicknameValid = false;
+            signupData.nickname = '';
         } else {
             helperElement.textContent = '';
-            isComplete = true;
-        }
-
-        if (isComplete) {
             signupData.nickname = value;
-        } else {
-            signupData.nickname = '';
+            isNicknameValid = true;
+        }
+    }
+    observeSignupData();
+};
+
+const blurEventHandler = async (event, uid) => {
+    const value = event.target.value;
+    const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
+    if (!helperElement || !value) return;
+
+    if (uid === 'email' && validEmail(value)) {
+        const checkData = { email: value, password: 'Validation1!', nickname: 'validation', passwordConfirm: 'Validation1!' };
+        const result = await userSignup(checkData);
+        if (result.status === 409 && result.body && result.body.message && result.body.message.includes('이메일')) {
+            helperElement.textContent = '*중복된 이메일 입니다.';
+            isEmailValid = false;
+        } else if (result.status === 409) {
+            isEmailValid = true;
+        }
+    } else if (uid === 'nickname' && validNickname(value) && !value.includes(' ') && value.length <= 10) {
+        const checkData = { email: 'validation@ex.com', password: 'Validation1!', nickname: value, passwordConfirm: 'Validation1!' };
+        const result = await userSignup(checkData);
+        if (result.status === 409 && result.body && result.body.message && result.body.message.includes('닉네임')) {
+            helperElement.textContent = '*중복된 닉네임 입니다.';
+            isNicknameValid = false;
+        } else if (result.status === 409) {
+            isNicknameValid = true;
         }
     }
     observeSignupData();
@@ -169,6 +190,9 @@ const addEventForInputElements = () => {
             element.addEventListener('change', event => changeEventHandler(event, id));
         } else {
             element.addEventListener('input', event => inputEventHandler(event, id));
+            if (id === 'email' || id === 'nickname') {
+                element.addEventListener('blur', event => blurEventHandler(event, id));
+            }
         }
     });
 };
@@ -177,7 +201,7 @@ const observeSignupData = () => {
     const { email, password, passwordConfirm, nickname } = signupData;
     const button = document.querySelector('#signupBtn');
 
-    if (!email || !validEmail(email) || !password || !validPassword(password) || !nickname || !validNickname(nickname) || !passwordConfirm) {
+    if (!email || !validEmail(email) || !isEmailValid || !password || !validPassword(password) || !nickname || !validNickname(nickname) || !isNicknameValid || !passwordConfirm || password !== passwordConfirm) {
         button.disabled = true;
         button.style.backgroundColor = '#ACA0EB';
     } else {
