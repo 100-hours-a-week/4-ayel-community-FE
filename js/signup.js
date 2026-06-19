@@ -76,37 +76,49 @@ const changeEventHandler = async (event, uid) => {
 const inputEventHandler = async (event, uid) => {
     if (uid == 'email') {
         const value = event.target.value;
-        const isValidEmail = validEmail(value);
         const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
 
         if (!helperElement) return;
 
-        if (value == '' || value == null) {
+        if (!value) {
             helperElement.textContent = '*이메일을 입력해주세요.';
             isEmailValid = false;
             signupData.email = '';
-        } else if (!isValidEmail) {
-            helperElement.textContent = '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)';
+        } else if (!validEmail(value)) {
+            helperElement.textContent =
+                '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)';
             isEmailValid = false;
             signupData.email = '';
         } else {
-            helperElement.textContent = '';
             signupData.email = value;
-            isEmailValid = true;
+
+            try {
+                const result = await checkEmail(value);
+
+                if (result.body?.success === false || result.status === 409) {
+                    helperElement.textContent = '*중복된 이메일 입니다.';
+                    isEmailValid = false;
+                } else {
+                    helperElement.textContent = '';
+                    isEmailValid = true;
+                }
+            } catch {
+                isEmailValid = false;
+            }
         }
     } else if (uid == 'pw') {
         const value = event.target.value;
-        const isValidPassword = validPassword(value);
         const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
         const helperElementCheck = document.querySelector(`.inputBox p[name="pwck"]`);
 
         if (!helperElement) return;
 
-        if (value == '' || value == null) {
+        if (!value) {
             helperElement.textContent = '*비밀번호를 입력해주세요.';
             helperElementCheck.textContent = '';
-        } else if (!isValidPassword) {
-            helperElement.textContent = '*비밀번호는 8자 이상, 20자 이하이며, 대문자, 소문자, 숫자, 특수문자를 각각 최소 1개 포함해야 합니다.';
+        } else if (!validPassword(value)) {
+            helperElement.textContent =
+                '*비밀번호는 8자 이상, 20자 이하이며, 대문자, 소문자, 숫자, 특수문자를 각각 최소 1개 포함해야 합니다.';
             helperElementCheck.textContent = '';
         } else {
             helperElement.textContent = '';
@@ -117,7 +129,7 @@ const inputEventHandler = async (event, uid) => {
         const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
         const password = signupData.password;
 
-        if (value == '' || value == null) {
+        if (!value) {
             helperElement.textContent = '*비밀번호 한번 더 입력해주세요.';
         } else if (password !== value) {
             helperElement.textContent = '*비밀번호가 다릅니다.';
@@ -127,66 +139,40 @@ const inputEventHandler = async (event, uid) => {
         }
     } else if (uid == 'nickname') {
         const value = event.target.value;
-        const isValidNickname = validNickname(value);
         const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
 
-        if (value == '' || value == null) {
+        if (!value) {
             helperElement.textContent = '*닉네임을 입력해주세요.';
             isNicknameValid = false;
             signupData.nickname = '';
         } else if (value.includes(' ')) {
-            helperElement.textContent = '*뛰어쓰기를 없애주세요.';
+            helperElement.textContent = '*띄어쓰기를 없애주세요.';
             isNicknameValid = false;
             signupData.nickname = '';
         } else if (value.length > 10) {
             helperElement.textContent = '*닉네임은 최대 10자까지 작성 가능합니다.';
             isNicknameValid = false;
             signupData.nickname = '';
-        } else if (!isValidNickname) {
+        } else if (!validNickname(value)) {
             helperElement.textContent = '*닉네임에 특수 문자는 사용할 수 없습니다.';
             isNicknameValid = false;
             signupData.nickname = '';
         } else {
-            helperElement.textContent = '';
             signupData.nickname = value;
-            isNicknameValid = true;
-        }
-    }
-    observeSignupData();
-};
 
-const blurEventHandler = async (event, uid) => {
-    const value = event.target.value;
-    const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
+            try {
+                const result = await checkNickname(value);
 
-    if (!helperElement || !value) {
-        return;
-    }
-
-    if (uid === 'email' && validEmail(value)) {
-        const result = await checkEmail(value);
-
-        if (result.status === 409) {
-            helperElement.textContent = '*중복된 이메일 입니다.';
-            isEmailValid = false;
-        } else {
-            helperElement.textContent = '';
-            isEmailValid = true;
-        }
-    } else if (
-        uid === 'nickname'
-        && validNickname(value)
-        && !value.includes(' ')
-        && value.length <= 10
-    ) {
-        const result = await checkNickname(value);
-
-        if (result.status === 409) {
-            helperElement.textContent = '*중복된 닉네임 입니다.';
-            isNicknameValid = false;
-        } else {
-            helperElement.textContent = '';
-            isNicknameValid = true;
+                if (result.body?.success === false || result.status === 409) {
+                    helperElement.textContent = '*중복된 닉네임 입니다.';
+                    isNicknameValid = false;
+                } else {
+                    helperElement.textContent = '';
+                    isNicknameValid = true;
+                }
+            } catch {
+                isNicknameValid = false;
+            }
         }
     }
 
@@ -195,15 +181,20 @@ const blurEventHandler = async (event, uid) => {
 
 const addEventForInputElements = () => {
     const InputElement = document.querySelectorAll('input');
+
     InputElement.forEach(element => {
         const id = element.id;
+
         if (id === 'profile') {
-            element.addEventListener('change', event => changeEventHandler(event, id));
+            element.addEventListener(
+                'change',
+                event => changeEventHandler(event, id)
+            );
         } else {
-            element.addEventListener('input', event => inputEventHandler(event, id));
-            if (id === 'email' || id === 'nickname') {
-                element.addEventListener('blur', event => blurEventHandler(event, id));
-            }
+            element.addEventListener(
+                'input',
+                event => inputEventHandler(event, id)
+            );
         }
     });
 };
