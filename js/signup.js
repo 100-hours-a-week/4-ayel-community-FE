@@ -166,7 +166,7 @@ const blurEventHandler = async (event, uid) => {
     if (uid === 'email' && validEmail(value)) {
         const result = await checkEmail(value);
 
-        if (result.data === true) {
+        if (result.status === 409) {
             helperElement.textContent = '*중복된 이메일 입니다.';
             isEmailValid = false;
         } else {
@@ -181,7 +181,7 @@ const blurEventHandler = async (event, uid) => {
     ) {
         const result = await checkNickname(value);
 
-        if (result.data === true) {
+        if (result.status === 409) {
             helperElement.textContent = '*중복된 닉네임 입니다.';
             isNicknameValid = false;
         } else {
