@@ -1,7 +1,7 @@
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheck, getQueryString, getServerUrl, prependChild, resolveImageUrl } from '../utils/function.js';
-import { createPost, fileUpload, updatePost, getBoardItem } from '../services/board-writeRequest.js';
+import { createPost, updatePost, getBoardItem } from '../services/board-writeRequest.js';
 
 const HTTP_OK = 200;
 const HTTP_CREATED = 201;
@@ -47,64 +47,94 @@ const getBoardData = () => {
 // 버튼 클릭시 이벤트
 const addBoard = async () => {
     console.log('addBoard 실행');
-    const boardData = getBoardData();
-    console.log('boardData=', boardData);
 
-    if (!boardData) return Dialog('게시글', '게시글을 입력해주세요.');
-    if (boardData.title.length > MAX_TITLE_LENGTH) return Dialog('게시글', '제목은 26자 이하로 입력해주세요.');
+const boardData = getBoardData();
 
-    if (!isModifyMode) {
-        const { ok, status, data } = await createPost(boardData);
-        console.log('createPost 결과=', { ok, status, data });
+console.log('boardData=', boardData);
 
-        if (!ok) throw new Error('서버 응답 오류');
+if (!boardData) {
+    return Dialog('게시글', '게시글을 입력해주세요.');
+}
 
-        if (status === HTTP_CREATED) {
-            const file = imageInput.files[0];
-            console.log('선택파일=', file);
+if (boardData.title.length > MAX_TITLE_LENGTH) {
+    return Dialog('게시글', '제목은 26자 이하로 입력해주세요.');
+}
 
-            if (file) {
-                const formData = new FormData();
-                formData.append('file', file);
-                console.log('파일 업로드 시작');
-                const uploadResult = await fileUpload(data.postId, formData);
-                console.log('파일 업로드 결과=', uploadResult);
+if (!isModifyMode) {
+    const formData = new FormData();
+
+    formData.append(
+        'post',
+        new Blob(
+            [
+                JSON.stringify({
+                    title: boardData.title,
+                    content: boardData.content,
+                }),
+            ],
+            {
+                type: 'application/json',
             }
+        )
+    );
 
-            localStorage.removeItem('postFileUrl');
-            window.location.href = `/html/board.html?id=${data.postId}`;
-        } else {
-            const helperElement = contentHelpElement;
-            helperElement.textContent = '제목, 내용을 모두 작성해주세요.';
-        }
-    } else {
-        // 게시글 작성 api 호출
-        const postId = getQueryString('postId');
-        const setData = { ...boardData };
+    const file = imageInput.files[0];
 
-        const { ok, status } = await updatePost(postId, setData);
-        console.log('게시글 수정 결과=', { ok, status });
-
-        if (!ok) throw new Error('서버 응답 오류');
-
-        if (status === HTTP_OK) {
-            const file = imageInput.files[0];
-            console.log('수정시 선택파일=', file);
-
-            if (file) {
-                const formData = new FormData();
-                formData.append('file', file);
-                const uploadResult = await fileUpload(postId, formData);
-                console.log('수정 파일 업로드 결과=', uploadResult);
-            }
-
-            localStorage.removeItem('postFileUrl');
-            window.location.href = `/html/board.html?id=${postId}`;
-        } else {
-            Dialog('게시글', '게시글 수정 실패');
-        }
+    if (file) {
+        formData.append('file', file);
     }
+
+    const { ok, status, data } = await createPost(formData);
+
+    console.log('createPost 결과=', {
+        ok,
+        status,
+        data,
+    });
+
+    if (!ok) {
+        throw new Error('서버 응답 오류');
+    }
+
+    if (status === HTTP_CREATED) {
+        localStorage.removeItem('postFileUrl');
+
+        window.location.href =
+            `/html/board.html?id=${data.postId}`;
+    } else {
+        contentHelpElement.textContent =
+            '제목, 내용을 모두 작성해주세요.';
+    }
+} else {
+    const postId = getQueryString('postId');
+
+    const setData = {
+        ...boardData,
+    };
+
+    const { ok, status } =
+        await updatePost(postId, setData);
+
+    console.log('게시글 수정 결과=', {
+        ok,
+        status,
+    });
+
+    if (!ok) {
+        throw new Error('서버 응답 오류');
+    }
+
+    if (status === HTTP_OK) {
+        localStorage.removeItem('postFileUrl');
+
+        window.location.href =
+            `/html/board.html?id=${postId}`;
+    } else {
+        Dialog('게시글', '게시글 수정 실패');
+    }
+}
 };
+
 
 const changeEventHandler = async (event, uid) => {
     if (uid == 'title') {

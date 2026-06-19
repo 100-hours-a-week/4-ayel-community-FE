@@ -1,7 +1,7 @@
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheckReverse, prependChild, validEmail, validPassword, validNickname } from '../utils/function.js';
-import { userSignup, fileUpload } from '../services/signupRequest.js';
+import { userSignup, fileUpload, checkEmail, checkNickname } from '../services/signupRequest.js';
 
 const MAX_PASSWORD_LENGTH = 20;
 const HTTP_OK = 200;
@@ -158,27 +158,38 @@ const inputEventHandler = async (event, uid) => {
 const blurEventHandler = async (event, uid) => {
     const value = event.target.value;
     const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
-    if (!helperElement || !value) return;
+
+    if (!helperElement || !value) {
+        return;
+    }
 
     if (uid === 'email' && validEmail(value)) {
-        const checkData = { email: value, password: 'Validation1!', nickname: 'validation', passwordConfirm: 'Validation1!' };
-        const result = await userSignup(checkData);
-        if (result.status === 409 && result.body && result.body.message && result.body.message.includes('이메일')) {
+        const result = await checkEmail(value);
+
+        if (result.data === true) {
             helperElement.textContent = '*중복된 이메일 입니다.';
             isEmailValid = false;
-        } else if (result.status === 409) {
+        } else {
+            helperElement.textContent = '';
             isEmailValid = true;
         }
-    } else if (uid === 'nickname' && validNickname(value) && !value.includes(' ') && value.length <= 10) {
-        const checkData = { email: 'validation@ex.com', password: 'Validation1!', nickname: value, passwordConfirm: 'Validation1!' };
-        const result = await userSignup(checkData);
-        if (result.status === 409 && result.body && result.body.message && result.body.message.includes('닉네임')) {
+    } else if (
+        uid === 'nickname'
+        && validNickname(value)
+        && !value.includes(' ')
+        && value.length <= 10
+    ) {
+        const result = await checkNickname(value);
+
+        if (result.data === true) {
             helperElement.textContent = '*중복된 닉네임 입니다.';
             isNicknameValid = false;
-        } else if (result.status === 409) {
+        } else {
+            helperElement.textContent = '';
             isNicknameValid = true;
         }
     }
+
     observeSignupData();
 };
 
