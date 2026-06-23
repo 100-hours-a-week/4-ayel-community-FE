@@ -86,7 +86,7 @@ const inputEventHandler = async (event, uid) => {
             signupData.email = '';
         } else if (!validEmail(value)) {
             helperElement.textContent =
-                '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)';
+                '*올바른 이메일 주소 형식을 입력해주세요.';
             isEmailValid = false;
             signupData.email = '';
         } else {
@@ -95,7 +95,7 @@ const inputEventHandler = async (event, uid) => {
             try {
                 const result = await checkEmail(value);
 
-                if (result.body?.success === false || result.status === 409) {
+                if (result.data === true) {
                     helperElement.textContent = '*중복된 이메일 입니다.';
                     isEmailValid = false;
                 } else {
@@ -163,7 +163,7 @@ const inputEventHandler = async (event, uid) => {
             try {
                 const result = await checkNickname(value);
 
-                if (result.body?.success === false || result.status === 409) {
+                if (result.data === true) {
                     helperElement.textContent = '*중복된 닉네임 입니다.';
                     isNicknameValid = false;
                 } else {
