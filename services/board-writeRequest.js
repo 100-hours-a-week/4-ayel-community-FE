@@ -9,17 +9,12 @@ export const createPost = formData => {
     });
 };
 
-export const updatePost = (postId, boardData) => {
-    const result = requestJson(`${getServerUrl()}/posts/${postId}`, {
+export const updatePost = (postId, formData) => {
+    return requestJson(`${getServerUrl()}/posts/${postId}`, {
         method: 'PATCH',
-        body: JSON.stringify(boardData),
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        body: formData,
         credentials: 'include',
     });
-
-    return result;
 };
 
 export const getBoardItem = postId => {
