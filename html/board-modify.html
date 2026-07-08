@@ -29,14 +29,17 @@
     </div>
     <div class="inputBox">
         <label class="non-border">이미지</label>
-        <label id="imagePreviewText"></label>
         <input
                 class="non-border"
                 type="file"
                 id="image"
-                placeholder="파일을 선택해주세요."
                 accept="image/*"
+                multiple
         />
+        <div
+                id="imagePreviewList"
+                class="imagePreviewList"
+        ></div>
     </div>
     <button id="submit">수정하기</button>
 </div>

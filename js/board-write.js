@@ -7,13 +7,14 @@ const HTTP_OK = 200;
 const HTTP_CREATED = 201;
 const MAX_TITLE_LENGTH = 26;
 const MAX_CONTENT_LENGTH = 1500;
+const MAX_TOTAL_FILE_SIZE = 10 * 1024 * 1024;
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 
 const submitButton = document.querySelector('#submit');
 const titleInput = document.querySelector('#title');
 const contentInput = document.querySelector('#content');
 const imageInput = document.querySelector('#image');
-const imagePreviewText = document.getElementById('imagePreviewText');
+const imagePreviewList = document.getElementById('imagePreviewList');
 const contentHelpElement = document.querySelector('.inputBox p[name="content"]');
 
 const boardWrite = {
@@ -23,6 +24,53 @@ const boardWrite = {
 
 let isModifyMode = false;
 let modifyData = {};
+let selectedFiles = [];
+let existingFiles = [];
+
+const renderPreview = () => {imagePreviewList.innerHTML = '';
+
+    // 기존 이미지
+    existingFiles.forEach((fileUrl, index) => {
+        const item = document.createElement('div');
+        item.className = 'previewItem';
+
+        const img = document.createElement('img');
+        img.src = getServerUrl() + fileUrl;
+
+        const button = document.createElement('button');
+        button.textContent = '✕';
+
+        button.onclick = () => {
+            existingFiles.splice(index, 1);
+            renderPreview();
+        };
+
+        item.appendChild(img);
+        item.appendChild(button);
+        imagePreviewList.appendChild(item);
+    });
+
+    // 새 이미지
+    selectedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'previewItem';
+
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+
+        const button = document.createElement('button');
+        button.textContent = '✕';
+
+        button.onclick = () => {
+            selectedFiles.splice(index, 1);
+            renderPreview();
+        };
+
+        item.appendChild(img);
+        item.appendChild(button);
+        imagePreviewList.appendChild(item);
+    });
+};
 
 const observeSignupData = () => {
     const { title, content } = boardWrite;
@@ -40,7 +88,6 @@ const getBoardData = () => {
     return {
         title: boardWrite.title,
         content: boardWrite.content,
-        attachFileUrl: localStorage.getItem('postFileUrl') === null ? undefined : localStorage.getItem('postFileUrl'),
     };
 };
 
@@ -69,8 +116,8 @@ if (!isModifyMode) {
             [
                 JSON.stringify({
                     title: boardData.title,
-                    content: boardData.content,
-                }),
+                    content: boardData.content
+                })
             ],
             {
                 type: 'application/json',
@@ -78,10 +125,8 @@ if (!isModifyMode) {
         )
     );
 
-    const file = imageInput.files[0];
-
-    if (file) {
-        formData.append('file', file);
+    for (const file of selectedFiles) {
+        formData.append('files', file);
     }
 
     const { ok, status, data } = await createPost(formData);
@@ -108,12 +153,29 @@ if (!isModifyMode) {
 } else {
     const postId = getQueryString('postId');
 
-    const setData = {
-        ...boardData,
-    };
+    const formData = new FormData();
 
-    const { ok, status } =
-        await updatePost(postId, setData);
+    formData.append(
+        'post',
+        new Blob(
+            [
+                JSON.stringify({
+                    title: boardData.title,
+                    content: boardData.content,
+                    existingFiles: existingFiles
+                }),
+            ],
+            {
+                type: 'application/json',
+            }
+        )
+    );
+
+    for (const file of selectedFiles) {
+        formData.append('files', file);
+    }
+
+    const { ok, status } = await updatePost(postId, formData);
 
     console.log('게시글 수정 결과=', {
         ok,
@@ -135,11 +197,11 @@ if (!isModifyMode) {
 }
 };
 
-
 const changeEventHandler = async (event, uid) => {
     if (uid == 'title') {
         const value = event.target.value;
         const helperElement = contentHelpElement;
+
         if (!value || value == '') {
             boardWrite[uid] = '';
             helperElement.textContent = '제목을 입력해주세요.';
@@ -151,9 +213,11 @@ const changeEventHandler = async (event, uid) => {
             boardWrite[uid] = value;
             helperElement.textContent = '';
         }
+
     } else if (uid == 'content') {
         const value = event.target.value;
         const helperElement = contentHelpElement;
+
         if (!value || value == '') {
             boardWrite[uid] = '';
             helperElement.textContent = '내용을 입력해주세요.';
@@ -165,28 +229,44 @@ const changeEventHandler = async (event, uid) => {
             boardWrite[uid] = value;
             helperElement.textContent = '';
         }
+
     } else if (uid == 'image') {
-        const file = event.target.files[0]; // 사용자가 선택한 파일
-        if (!file) {
-            console.log('파일이 선택되지 않았습니다.');
+        const newFiles = Array.from(event.target.files);
+
+        if (newFiles.length === 0) {
             return;
         }
 
-        // 파일 업로드를 위한 POST 요청 실행
-        try {
-            const fileUrl = URL.createObjectURL(file);
-            localStorage.setItem('postFileUrl', fileUrl);
+        // 기존 파일 유지 + 새 파일 추가
+        selectedFiles.push(...newFiles);
 
-            if (imagePreviewText !== null) {
-                imagePreviewText.innerHTML = file.name + `<span class="deleteFile">X</span>`;
-                imagePreviewText.style.display = 'block';
-            }
-        } catch (error) {
-            console.error('업로드 중 오류 발생:', error);
+        const MAX_TOTAL_FILE_SIZE = 10 * 1024 * 1024;
+
+        const totalSize = selectedFiles.reduce(
+            (sum, file) => sum + file.size,
+            0
+        );
+
+        if (totalSize > MAX_TOTAL_FILE_SIZE) {
+
+            Dialog(
+                '파일',
+                '첨부 파일의 총 용량은 10MB를 초과할 수 없습니다.'
+            );
+
+            // 방금 추가한 파일만 제거
+            selectedFiles.splice(selectedFiles.length - newFiles.length);
+
+            renderPreview();
+
+            imageInput.value = '';
+
+            return;
         }
-    } else if (uid === 'imagePreviewText') {
-        localStorage.removeItem('postFileUrl');
-        imagePreviewText.style.display = 'none';
+
+        renderPreview();
+
+        // 같은 파일도 다시 선택 가능하도록 초기화
         imageInput.value = '';
     }
 
@@ -213,32 +293,19 @@ const addEvent = () => {
     titleInput.addEventListener('input', event => changeEventHandler(event, 'title'));
     contentInput.addEventListener('input', event => changeEventHandler(event, 'content'));
     imageInput.addEventListener('change', event => changeEventHandler(event, 'image'));
-    if (imagePreviewText !== null) {
-        imagePreviewText.addEventListener('click', event => changeEventHandler(event, 'imagePreviewText'));
-    }
 };
 
 const setModifyData = data => {
     titleInput.value = data.title;
     contentInput.value = data.content;
 
-    const fileUrl = data.fileUrl || resolveImageUrl(data.filePath);
-    if (fileUrl) {
-        // fileUrl에서 파일 이름만 추출하여 표시
-        const fileName = fileUrl.split('/').pop();
-        imagePreviewText.innerHTML = fileName + `<span class="deleteFile">X</span>`;
-        imagePreviewText.style.display = 'block';
-        localStorage.setItem('postFileUrl', fileUrl);
+    if (data.fileUrls && data.fileUrls.length > 0) {
+        existingFiles = [...data.fileUrls];
+        renderPreview();
 
-        // 이제 추출된 파일명을 사용하여 File 객체를 생성
-        const attachFile = new File([fileUrl], fileName, { type: '' });
-
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(attachFile);
-        imageInput.files = dataTransfer.files;
     } else {
         // 이미지 파일이 없으면 미리보기 숨김
-        imagePreviewText.style.display = 'none';
+        imagePreviewList.innerHTML = '';
     }
 
     boardWrite.title = data.title;

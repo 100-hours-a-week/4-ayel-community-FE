@@ -54,12 +54,22 @@ const setBoardDetail = data => {
 
     // 바디 정보
     const contentImgElement = document.querySelector('.contentImg');
-    const fileUrl = data.fileUrls?.[0];
 
-    if (fileUrl) {
-        const img = document.createElement('img');
-        img.src = getServerUrl() + fileUrl;
-        contentImgElement.appendChild(img);
+    // 기존 이미지 제거
+    contentImgElement.innerHTML = '';
+
+    if (data.fileUrls && data.fileUrls.length > 0) {
+
+        data.fileUrls.forEach(fileUrl => {
+
+            const img = document.createElement('img');
+
+            img.src = getServerUrl() + fileUrl;
+
+            contentImgElement.appendChild(img);
+
+        });
+
     }
     const contentElement = document.querySelector('.content');
     contentElement.textContent = data.content;
