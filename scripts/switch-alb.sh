@@ -29,24 +29,32 @@ OLD_TG_ARN=$(aws elbv2 describe-target-groups \
   --query 'TargetGroups[0].TargetGroupArn' \
   --output text)
 
-echo "새 Target Group을 ALB에 연결"
-
-aws elbv2 modify-listener \
-  --listener-arn "$LISTENER_ARN" \
-  --default-actions \
-  "Type=forward,ForwardConfig={TargetGroups=[{TargetGroupArn=$OLD_TG_ARN,Weight=100},{TargetGroupArn=$NEW_TG_ARN,Weight=0}]}"
-
-echo "새 Target Group Healthy 대기"
-
-aws elbv2 wait target-in-service \
-  --target-group-arn "$NEW_TG_ARN"
-
-echo "새 Target Group Healthy"
+echo "ALB 트래픽 전환: $TARGET_COLOR"
 
 aws elbv2 modify-listener \
   --listener-arn "$LISTENER_ARN" \
   --default-actions \
   "Type=forward,TargetGroupArn=$NEW_TG_ARN"
 
-echo "ALB 트래픽 전환 완료"
-echo "Active Color: $TARGET_COLOR"
+echo "새 Target Group Healthy 대기"
+
+if aws elbv2 wait target-in-service \
+  --target-group-arn "$NEW_TG_ARN"; then
+
+  echo "새 Target Group Healthy"
+  echo "ALB 전환 완료"
+  echo "Active Color: $TARGET_COLOR"
+
+else
+
+  echo "Health Check 실패"
+  echo "기존 Target Group으로 롤백"
+
+  aws elbv2 modify-listener \
+    --listener-arn "$LISTENER_ARN" \
+    --default-actions \
+    "Type=forward,TargetGroupArn=$OLD_TG_ARN"
+
+  echo "롤백 완료"
+  exit 1
+fi
