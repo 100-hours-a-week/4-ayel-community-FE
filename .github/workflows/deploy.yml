@@ -38,6 +38,20 @@ jobs:
           role-to-assume: arn:aws:iam::209822909687:role/GitHubActions-FE-Deploy-Role
           aws-region: ap-northeast-2
 
+      - name: 배포 대상 결정
+        id: target
+        run: |
+          CURRENT_TG=$(aws elbv2 describe-rules \
+            --listener-arn "${{ secrets.HTTPS_LISTENER_ARN }}" \
+            --query 'Rules[?IsDefault==`true`].Actions[0].TargetGroupArn' \
+            --output text)
+
+          if [[ "$CURRENT_TG" == *"community-fe-green-tg"* ]]; then
+            echo "color=blue" >> "$GITHUB_OUTPUT"
+          else
+            echo "color=green" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Docker 이미지 빌드
         run: |
           docker build \
@@ -55,16 +69,8 @@ jobs:
           docker push \
             registry.ayelcommunity.site/community-fe:${{ github.sha }}
 
-      - name: FE Green 환경 배포
+      - name: FE Blue Green 환경 배포
         run: |
-          aws ssm send-command \
-            --instance-ids "i-01d75fd54fbe9641a" "i-041f03685bee07ddd" \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
-              "cd /home/ssm-user/community-app/fe",
-              "curl -fsSLO https://raw.githubusercontent.com/100-hours-a-week/4-ayel-community-FE/main/compose.blue.yml",
-              "curl -fsSLO https://raw.githubusercontent.com/100-hours-a-week/4-ayel-community-FE/main/compose.green.yml",
-              "mkdir -p scripts",
-              "curl -fsSL -o scripts/deploy.sh https://raw.githubusercontent.com/100-hours-a-week/4-ayel-community-FE/main/scripts/deploy.sh",
-              "bash scripts/deploy.sh ${{ github.sha }} green"
-            ]'
+          bash scripts/trigger-deploy.sh \
+            "${{ github.sha }}" \
+            "${{ steps.target.outputs.color }}"
