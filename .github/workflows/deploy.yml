@@ -69,8 +69,14 @@ jobs:
           docker push \
             registry.ayelcommunity.site/community-fe:${{ github.sha }}
 
-      - name: FE Blue Green 환경 배포
+      - name: ALB 트래픽 전환
         run: |
-          bash scripts/ssm-deploy.sh \
-            "${{ github.sha }}" \
-            "${{ steps.target.outputs.color }}"
+          bash scripts/switch-alb.sh \
+            "${{ steps.target.outputs.color }}" \
+            "${{ secrets.HTTPS_LISTENER_ARN }}"
+
+      - name: ALB 트래픽 전환
+        run: |
+          bash scripts/switch-alb.sh \
+            "${{ steps.target.outputs.color }}" \
+            "${{ secrets.HTTPS_LISTENER_ARN }}"
