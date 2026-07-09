@@ -29,16 +29,11 @@ OLD_TG_ARN=$(aws elbv2 describe-target-groups \
   --query 'TargetGroups[0].TargetGroupArn' \
   --output text)
 
-RULE_ARN=$(aws elbv2 describe-rules \
-  --listener-arn "$LISTENER_ARN" \
-  --query 'Rules[?IsDefault==`true`].RuleArn | [0]' \
-  --output text)
-
 echo "새 Target Group을 ALB에 연결"
 
-aws elbv2 modify-rule \
-  --rule-arn "$RULE_ARN" \
-  --actions \
+aws elbv2 modify-listener \
+  --listener-arn "$LISTENER_ARN" \
+  --default-actions \
   "Type=forward,ForwardConfig={TargetGroups=[{TargetGroupArn=$OLD_TG_ARN,Weight=100},{TargetGroupArn=$NEW_TG_ARN,Weight=0}]}"
 
 echo "새 Target Group Healthy 대기"
@@ -48,9 +43,9 @@ aws elbv2 wait target-in-service \
 
 echo "새 Target Group Healthy"
 
-aws elbv2 modify-rule \
-  --rule-arn "$RULE_ARN" \
-  --actions \
+aws elbv2 modify-listener \
+  --listener-arn "$LISTENER_ARN" \
+  --default-actions \
   "Type=forward,TargetGroupArn=$NEW_TG_ARN"
 
 echo "ALB 트래픽 전환 완료"
