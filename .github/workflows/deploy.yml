@@ -71,6 +71,6 @@ jobs:
 
       - name: FE Blue Green 환경 배포
         run: |
-          bash scripts/trigger-deploy.sh \
+          bash scripts/ssm-deploy.sh \
             "${{ github.sha }}" \
             "${{ steps.target.outputs.color }}"
