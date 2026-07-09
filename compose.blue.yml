@@ -1,0 +1,25 @@
+services:
+  # FE Blue 환경
+  fe-blue:
+    # SHA를 이미지 태그로 사용
+    image: registry.ayelcommunity.site/community-fe:${FE_IMAGE_TAG}
+
+    # 컨테이너 종료 시 자동 재시작
+    restart: unless-stopped
+
+    # Blue 환경 Host Port 80
+    ports:
+      - "80:3000"
+
+    # 컨테이너 리소스 제한
+    cpus: 0.25
+    mem_limit: 128m
+
+    # Blue 환경 네트워크
+    networks:
+      - blue_net
+
+networks:
+  # Blue 환경 전용 네트워크
+  blue_net:
+    driver: bridge
