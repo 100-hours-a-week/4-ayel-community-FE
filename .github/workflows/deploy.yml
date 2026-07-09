@@ -55,12 +55,16 @@ jobs:
           docker push \
             registry.ayelcommunity.site/community-fe:${{ github.sha }}
 
-      - name: SSM 배포 명령 테스트
+      - name: FE Green 환경 배포
         run: |
           aws ssm send-command \
-            --instance-ids \
-              "i-01d75fd54fbe9641a" \
-              "i-041f03685bee07ddd" \
+            --instance-ids "i-01d75fd54fbe9641a" "i-041f03685bee07ddd" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["echo FE deployment connection success"]' \
-            --region ap-northeast-2
+            --parameters 'commands=[
+              "cd /home/ssm-user/community-app/fe",
+              "curl -fsSLO https://raw.githubusercontent.com/100-hours-a-week/4-ayel-community-FE/main/compose.blue.yml",
+              "curl -fsSLO https://raw.githubusercontent.com/100-hours-a-week/4-ayel-community-FE/main/compose.green.yml",
+              "mkdir -p scripts",
+              "curl -fsSL -o scripts/deploy.sh https://raw.githubusercontent.com/100-hours-a-week/4-ayel-community-FE/main/scripts/deploy.sh",
+              "bash scripts/deploy.sh ${{ github.sha }} green"
+            ]'
