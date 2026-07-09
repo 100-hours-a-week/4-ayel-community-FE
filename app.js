@@ -7,7 +7,7 @@ const app = express();
 
 dotenv.config();
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // 현재 파일의 URL에서 디렉토리 경로를 추출
 const __filename = fileURLToPath(import.meta.url);
@@ -29,6 +29,6 @@ app.get('/', (req, res) => {
     res.redirect('/html/index.html');
 });
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port ${port}`);
 });
