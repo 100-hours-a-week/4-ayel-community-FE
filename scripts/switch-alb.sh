@@ -1,60 +1,50 @@
 #!/bin/bash
 
-set -e
+# 명령 실패, 정의되지 않은 변수 사용, 파이프라인 오류 시 즉시 종료
+set -euo pipefail
 
-TARGET_COLOR=$1
-LISTENER_ARN=$2
+# 워크플로우에서 배포 환경과 HTTPS Listener ARN을 전달받음
+TARGET_COLOR=${1:?TARGET_COLOR가 필요합니다}
+LISTENER_ARN=${2:?LISTENER_ARN이 필요합니다}
 
-echo "ALB 전환 시작"
+echo "FE ALB 전환 시작"
 echo "Target Color: $TARGET_COLOR"
 
+# 배포 환경에 따라 전환할 Target Group 결정
 if [ "$TARGET_COLOR" = "blue" ]; then
-  NEW_TG_NAME="community-fe-tg"
-  OLD_TG_NAME="community-fe-green-tg"
+  TARGET_TG_NAME="community-fe-tg"
 elif [ "$TARGET_COLOR" = "green" ]; then
-  NEW_TG_NAME="community-fe-green-tg"
-  OLD_TG_NAME="community-fe-tg"
+  TARGET_TG_NAME="community-fe-green-tg"
 else
   echo "잘못된 Target Color: $TARGET_COLOR"
   exit 1
 fi
 
-NEW_TG_ARN=$(aws elbv2 describe-target-groups \
-  --names "$NEW_TG_NAME" \
+# Target Group 이름으로 ARN 조회
+TARGET_TG_ARN=$(aws elbv2 describe-target-groups \
+  --names "$TARGET_TG_NAME" \
   --query 'TargetGroups[0].TargetGroupArn' \
   --output text)
 
-OLD_TG_ARN=$(aws elbv2 describe-target-groups \
-  --names "$OLD_TG_NAME" \
-  --query 'TargetGroups[0].TargetGroupArn' \
-  --output text)
+echo "Target Group: $TARGET_TG_NAME"
+echo "새 Target Group Healthy 대기"
 
-echo "ALB 트래픽 전환: $TARGET_COLOR"
+# 새 Target Group이 Healthy인 경우에만 트래픽 전환
+if ! aws elbv2 wait target-in-service \
+  --target-group-arn "$TARGET_TG_ARN"; then
+
+  echo "Health Check 실패"
+  echo "FE ALB 전환 중단"
+  exit 1
+fi
+
+echo "새 Target Group Healthy 확인"
+echo "FE ALB 트래픽 전환: $TARGET_COLOR"
 
 aws elbv2 modify-listener \
   --listener-arn "$LISTENER_ARN" \
   --default-actions \
-  "Type=forward,TargetGroupArn=$NEW_TG_ARN"
+  "Type=forward,TargetGroupArn=$TARGET_TG_ARN"
 
-echo "새 Target Group Healthy 대기"
-
-if aws elbv2 wait target-in-service \
-  --target-group-arn "$NEW_TG_ARN"; then
-
-  echo "새 Target Group Healthy"
-  echo "ALB 전환 완료"
-  echo "Active Color: $TARGET_COLOR"
-
-else
-
-  echo "Health Check 실패"
-  echo "기존 Target Group으로 롤백"
-
-  aws elbv2 modify-listener \
-    --listener-arn "$LISTENER_ARN" \
-    --default-actions \
-    "Type=forward,TargetGroupArn=$OLD_TG_ARN"
-
-  echo "롤백 완료"
-  exit 1
-fi
+echo "FE ALB 전환 완료"
+echo "Active Color: $TARGET_COLOR"

@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# 명령 실행 중 오류가 발생하면 배포 중단
-set -e
+# 명령 실패, 정의되지 않은 변수 사용, 파이프라인 오류 시 즉시 종료
+set -euo pipefail
 
-IMAGE_TAG=$1
-TARGET_COLOR=$2
+# 전달받은 이미지 태그와 배포 환경 확인
+IMAGE_TAG=${1:?IMAGE_TAG가 필요합니다}
+TARGET_COLOR=${2:?TARGET_COLOR가 필요합니다}
 
 echo "FE 배포 시작"
 echo "Image Tag: $IMAGE_TAG"
 echo "Target Color: $TARGET_COLOR"
 
-# 배포 대상 환경에 따라 Compose 파일과 포트 선택
+# 배포 환경에 따라 Compose 파일과 포트 결정
 if [ "$TARGET_COLOR" = "blue" ]; then
   COMPOSE_FILE="compose.blue.yml"
   TARGET_PORT=80
@@ -22,23 +23,22 @@ else
   exit 1
 fi
 
-echo "Compose File: $COMPOSE_FILE"
-echo "Target Port: $TARGET_PORT"
-
-# Blue와 Green의 Compose 프로젝트 분리
+# Blue와 Green을 독립된 Compose 프로젝트로 관리
 PROJECT_NAME="community-fe-${TARGET_COLOR}"
 
+echo "Compose File: $COMPOSE_FILE"
+echo "Target Port: $TARGET_PORT"
 echo "Project Name: $PROJECT_NAME"
 
-# 새 이미지 Pull 및 컨테이너 실행
+# SHA 태그의 이미지를 Pull하여 대상 환경의 컨테이너 실행
 IMAGE_TAG="$IMAGE_TAG" docker compose \
   -p "$PROJECT_NAME" \
   -f "$COMPOSE_FILE" \
   up -d --pull always
 
-# 새 환경 Health Check
 echo "Health Check 시작"
 
+# 새 컨테이너가 정상적으로 응답할 때까지 최대 10회 확인
 for i in {1..10}; do
   if curl -fsS "http://localhost:${TARGET_PORT}" > /dev/null; then
     echo "Health Check 성공"
