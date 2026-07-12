@@ -25,10 +25,17 @@ app.get('/config.js', (req, res) => {
     );
 });
 
+// 컨테이너 및 로드밸런서 상태 확인용 Health Check
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'UP',
+    });
+});
+
 app.get('/', (req, res) => {
     res.redirect('/html/index.html');
 });
 
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
 });
