@@ -23,3 +23,10 @@ export const userDelete = async (userId) => {
     });
     return result;
 };
+
+export const deleteProfileFile = async userId => {
+    return requestJson(`${getServerUrl()}/users/${userId}/files`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+};

@@ -1,8 +1,8 @@
-import { checkNickname, fileUpload } from '../services/signupRequest.js';
+import {checkNickname, createPresignedUrl,} from '../services/signupRequest.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheck, prependChild, getServerUrl, resolveImageUrl, validNickname } from '../utils/function.js';
-import { userModify, userDelete } from '../services/modifyInfoRequest.js';
+import { userModify, userDelete, deleteProfileFile, } from '../services/modifyInfoRequest.js';
 import { requestJson } from '../utils/request.js';
 
 const emailTextElement = document.querySelector('#id');
@@ -19,7 +19,7 @@ let authData = null;
 let selectedFile = null;
 const changeData = {
     nickname: '',
-    profileImageUrl: null,
+    profileFileUrl: null,
 };
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
@@ -45,17 +45,6 @@ const setData = data => {
             const resolvedUrl = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
             profilePreview.src = resolvedUrl;
             if (removeProfileButton) removeProfileButton.style.display = 'flex';
-            localStorage.setItem('profileImageUrl', url);
-
-            const fileName = url.split('/').pop();
-            try {
-                const profileImage = new File([resolvedUrl], fileName, { type: '' });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(profileImage);
-                if (profileInputElement) profileInputElement.files = dataTransfer.files;
-            } catch (error) {
-                console.error(error);
-            }
         }
     }
 };
@@ -64,9 +53,12 @@ const observeData = () => {
     const button = document.querySelector('#signupBtn');
     if (!button || !authData) return;
 
-    const authUrl = authData.data.profileFileUrl || authData.data.profileImageUrl || null;
+    const authUrl = authData.data.profileFileUrl || null;
 
-    if (authData.data.nickname !== changeData.nickname || authUrl !== changeData.profileImageUrl) {
+    if (
+        authData.data.nickname !== changeData.nickname ||
+        authUrl !== changeData.profileFileUrl
+    ) {
         button.disabled = false;
         button.style.backgroundColor = '#7F6AEE';
     } else {
@@ -79,34 +71,45 @@ const changeEventHandler = async (event, uid) => {
     const button = document.querySelector('#signupBtn');
     if (uid == 'nickname') {
         const value = event.target.value;
-        const isValidNickname = validNickname(value);
         const helperElement = nicknameHelpElement;
 
-        if (value == '' || value == null) {
+        if (!value) {
             helperElement.textContent = '*닉네임을 입력해주세요.';
             changeData.nickname = '';
-        } else if (!isValidNickname) {
-            helperElement.textContent = '*닉네임은 2~10자의 영문자, 한글 또는 숫자만 사용할 수 있습니다. 특수 문자와 띄어쓰기는 사용할 수 없습니다.';
+        } else if (!validNickname(value)) {
+            helperElement.textContent =
+                '*닉네임은 2~10자의 영문자, 한글 또는 숫자만 사용할 수 있습니다. 특수 문자와 띄어쓰기는 사용할 수 없습니다.';
             changeData.nickname = '';
         } else {
-            helperElement.textContent = '';
-            changeData.nickname = value;
+            const result = await checkNickname(value);
+
+            if (
+                result.data === true &&
+                value !== authData.data.nickname
+            ) {
+                helperElement.textContent = '*중복된 닉네임입니다.';
+                changeData.nickname = '';
+            } else {
+                helperElement.textContent = '';
+                changeData.nickname = value;
+            }
         }
     } else if (uid == 'profile') {
         const file = event.target.files[0];
+
         if (!file) {
-            localStorage.removeItem('profileImageUrl');
-            if (profilePreview) profilePreview.src = DEFAULT_PROFILE_IMAGE;
-            changeData.profileImageUrl = null;
-            selectedFile = null;
-            if (removeProfileButton) removeProfileButton.style.display = 'none';
-        } else {
-            selectedFile = file;
-            if (profilePreview) {
-                profilePreview.src = URL.createObjectURL(file);
-                changeData.profileImageUrl = profilePreview.src;
-            }
-            if (removeProfileButton) removeProfileButton.style.display = 'flex';
+            return;
+        }
+
+        selectedFile = file;
+
+        if (profilePreview) {
+            profilePreview.src = URL.createObjectURL(file);
+            changeData.profileFileUrl = null;
+        }
+
+        if (removeProfileButton) {
+            removeProfileButton.style.display = 'flex';
         }
     }
     observeData();
@@ -114,38 +117,60 @@ const changeEventHandler = async (event, uid) => {
 
 const sendModifyData = async () => {
     const button = document.querySelector('#signupBtn');
-    if (button && !button.disabled) {
-        if (changeData.nickname === '') {
-            Dialog('필수 정보 누락', '닉네임을 입력해주세요.');
-        } else {
-            const { ok } = await userModify(authData.data.userId, { nickname: changeData.nickname });
-            if (ok) {
-                const currentAuthUrl = authData.data.profileFileUrl || authData.data.profileImageUrl;
-                if (selectedFile) {
-                    const uploadResult = await fileUpload(authData.data.userId, selectedFile);
-                    if (!uploadResult.ok) {
-                        Dialog('업로드 실패', uploadResult.body?.message || '프로필 이미지 업로드에 실패했습니다.');
-                        return;
-                    }
-                } else if (!changeData.profileImageUrl && currentAuthUrl) {
-                    const deleteResult = await requestJson(`${getServerUrl()}/users/${authData.data.userId}/files`, {
-                        method: 'DELETE',
-                        credentials: 'include',
-                    });
-                    if (!deleteResult.ok) {
-                        Dialog('삭제 실패', deleteResult.body?.message || '프로필 이미지 삭제에 실패했습니다.');
-                        return;
-                    }
-                }
-                localStorage.removeItem('profileImageUrl');
-                saveToastMessage('수정완료');
-                location.href = '/html/modifyInfo.html';
-            } else {
-                localStorage.removeItem('profileImageUrl');
-                saveToastMessage('수정실패');
-                location.href = '/html/modifyInfo.html';
-            }
+
+    if (button.disabled) {
+        return;
+    }
+
+    if (changeData.nickname === '') {
+        Dialog('필수 정보 누락', '닉네임을 입력해주세요.');
+        return;
+    }
+
+    const props = {
+        nickname: changeData.nickname,
+        profileFileUrl: null,
+    };
+
+    // 새 프로필 선택 시 S3 업로드
+    if (selectedFile) {
+
+        const { ok, data } = await createPresignedUrl(selectedFile);
+
+        if (!ok || !data) {
+            Dialog('파일', '프로필 이미지 업로드 준비에 실패했습니다.');
+            return;
         }
+
+        const { uploadUrl, fileUrl } = data;
+
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': selectedFile.type,
+            },
+            body: selectedFile,
+        });
+
+        if (!uploadResponse.ok) {
+            Dialog('파일', '프로필 이미지 업로드 실패');
+            return;
+        }
+
+        props.profileFileUrl = fileUrl;
+    }
+
+    const { ok } = await userModify(
+        authData.data.userId,
+        props
+    );
+
+    if (ok) {
+        saveToastMessage('수정완료');
+        location.href = '/html/modifyInfo.html';
+    } else {
+        saveToastMessage('수정실패');
+        location.href = '/html/modifyInfo.html';
     }
 };
 
@@ -178,13 +203,28 @@ const addEvent = () => {
         profileInputElement.addEventListener('change', event => changeEventHandler(event, 'profile'));
     }
     if (removeProfileButton) {
-        removeProfileButton.addEventListener('click', () => {
-            localStorage.removeItem('profileImageUrl');
-            if (profilePreview) profilePreview.src = DEFAULT_PROFILE_IMAGE;
-            changeData.profileImageUrl = null;
+        removeProfileButton.addEventListener('click', async () => {
+
+            const { ok } = await deleteProfileFile(authData.data.userId);
+
+            if (!ok) {
+                Dialog('프로필', '프로필 삭제에 실패했습니다.');
+                return;
+            }
+
+            if (profilePreview) {
+                profilePreview.src = DEFAULT_PROFILE_IMAGE;
+            }
+
+            changeData.profileFileUrl = null;
             selectedFile = null;
-            if (profileInputElement) profileInputElement.value = '';
+
+            if (profileInputElement) {
+                profileInputElement.value = '';
+            }
+
             removeProfileButton.style.display = 'none';
+
             observeData();
         });
     }
@@ -251,7 +291,7 @@ const init = async () => {
     if (userResponse.ok && userResponse.data) {
         const initialUrl = userResponse.data.profileFileUrl || userResponse.data.profileImageUrl || null;
         changeData.nickname = userResponse.data.nickname;
-        changeData.profileImageUrl = initialUrl;
+        changeData.profileFileUrl = initialUrl;
 
         let url = initialUrl;
         if (url) {
@@ -267,7 +307,7 @@ const init = async () => {
     } else {
         const initialUrl = authData.data.profileFileUrl || authData.data.profileImageUrl || null;
         changeData.nickname = authData.data.nickname;
-        changeData.profileImageUrl = initialUrl;
+        changeData.profileFileUrl = initialUrl;
 
         let url = initialUrl;
         if (url) {

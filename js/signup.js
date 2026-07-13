@@ -1,7 +1,7 @@
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheckReverse, prependChild, validEmail, validPassword, validNickname } from '../utils/function.js';
-import { userSignup, fileUpload, checkEmail, checkNickname } from '../services/signupRequest.js';
+import {userSignup, createPresignedUrl, checkEmail, checkNickname,} from '../services/signupRequest.js';
 
 const MAX_PASSWORD_LENGTH = 20;
 const HTTP_OK = 200;
@@ -16,7 +16,6 @@ const signupData = {
     password: '',
     nickname: '',
     passwordConfirm: '',
-    profileImageUrl: undefined,
 };
 
 const getSignupData = (event) => {
@@ -33,27 +32,59 @@ const getSignupData = (event) => {
 
 const sendSignupData = async () => {
     const props = { ...signupData };
-    if (localStorage.getItem('profileImageUrl')) {
-        props.profileImageUrl = localStorage.getItem('profileImageUrl');
-    }
 
     if (props.password.length > MAX_PASSWORD_LENGTH) {
         Dialog('비밀번호', '비밀번호는 20자 이하로 입력해주세요.');
         return;
     }
 
-    const result = await userSignup(props);
-    const { status, data, body } = result;
+    // 프로필 이미지가 있으면 먼저 S3 업로드
+    if (selectedFile) {
+
+        const { ok, data } = await createPresignedUrl(selectedFile);
+
+        if (!ok || !data) {
+            Dialog('파일', '프로필 이미지 업로드 준비에 실패했습니다.');
+            return;
+        }
+
+        const { uploadUrl, fileUrl } = data;
+
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': selectedFile.type,
+            },
+            body: selectedFile,
+        });
+
+        if (!uploadResponse.ok) {
+            Dialog('파일', '프로필 이미지 업로드에 실패했습니다.');
+            return;
+        }
+
+        props.profileFileUrl = fileUrl;
+    }
+
+    const { ok, status, body } = await userSignup(props);
+
+    if (!ok) {
+        Dialog(
+            '회원 가입 실패',
+            (body && body.message) || '잠시 뒤 다시 시도해 주세요'
+        );
+        return;
+    }
+
+    location.href = '/html/login.html';
 
     if (status === HTTP_CREATED) {
-        if (selectedFile && data && data.userId) {
-            await fileUpload(data.userId, selectedFile);
-        }
-        localStorage.removeItem('profileImageUrl');
         location.href = '/html/login.html';
     } else {
-        Dialog('회원 가입 실패', (body && body.message) || '잠시 뒤 다시 시도해 주세요');
-        localStorage.removeItem('profileImageUrl');
+        Dialog(
+            '회원 가입 실패',
+            (body && body.message) || '잠시 뒤 다시 시도해 주세요'
+        );
     }
 };
 
@@ -66,6 +97,8 @@ const changeEventHandler = async (event, uid) => {
     if (uid == 'profile') {
         const file = event.target.files[0];
         if (!file) return;
+
+        selectedFile = file;
 
         const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
         helperElement.textContent = '';
@@ -211,35 +244,12 @@ const observeSignupData = () => {
         button.style.backgroundColor = '#7F6AEE';
     }
 };
-
-const uploadProfileImage = () => {
-    document.getElementById('profile').addEventListener('change', async event => {
-        const file = event.target.files[0];
-        if (!file) {
-            console.log('파일이 선택되지 않았습니다.');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('profileImage', file);
-
-        try {
-            selectedFile = file;
-            const fileUrl = URL.createObjectURL(file);
-            localStorage.setItem('profileImageUrl', fileUrl);
-        } catch (error) {
-            console.error('업로드 중 오류 발생:', error);
-        }
-    });
-};
-
 const init = async () => {
     await authCheckReverse();
     prependChild(document.body, Header('커뮤니티', 1));
     observeSignupData();
     addEventForInputElements();
     signupClick();
-    uploadProfileImage();
 };
 
 init();

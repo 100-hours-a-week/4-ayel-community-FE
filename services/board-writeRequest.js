@@ -1,27 +1,45 @@
 import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
-export const createPost = formData => {
+export const createPost = post => {
     return requestJson(`${getServerUrl()}/posts`, {
         method: 'POST',
-        body: formData,
         credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(post),
     });
 };
 
-export const updatePost = (postId, formData) => {
+export const updatePost = (postId, post) => {
     return requestJson(`${getServerUrl()}/posts/${postId}`, {
         method: 'PATCH',
-        body: formData,
         credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(post),
     });
 };
 
 export const getBoardItem = postId => {
-    const result = requestJson(getServerUrl() + `/posts/${postId}`, {
+    return requestJson(`${getServerUrl()}/posts/${postId}`, {
         method: 'GET',
         credentials: 'include',
     });
+};
 
-    return result;
+export const createPresignedUrl = file => {
+    return requestJson(`${getServerUrl()}/files/presigned`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+        }),
+    });
 };
