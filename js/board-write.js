@@ -1,7 +1,7 @@
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { authCheck, getQueryString, getServerUrl, prependChild, resolveImageUrl } from '../utils/function.js';
-import { createPost, updatePost, getBoardItem } from '../services/board-writeRequest.js';
+import { createPost, updatePost, getBoardItem, getPresignedUrl } from '../services/board-writeRequest.js';
 
 const HTTP_OK = 200;
 const HTTP_CREATED = 201;
@@ -35,7 +35,7 @@ const renderPreview = () => {imagePreviewList.innerHTML = '';
         item.className = 'previewItem';
 
         const img = document.createElement('img');
-        img.src = getServerUrl() + fileUrl;
+        img.src = fileUrl;
 
         const button = document.createElement('button');
         button.textContent = '✕';
@@ -95,106 +95,104 @@ const getBoardData = () => {
 const addBoard = async () => {
     console.log('addBoard 실행');
 
-const boardData = getBoardData();
+    const boardData = getBoardData();
 
-console.log('boardData=', boardData);
+    if (!boardData) {
+        return Dialog('게시글', '게시글을 입력해주세요.');
+    }
 
-if (!boardData) {
-    return Dialog('게시글', '게시글을 입력해주세요.');
-}
+    if (boardData.title.length > MAX_TITLE_LENGTH) {
+        return Dialog('게시글', '제목은 26자 이하로 입력해주세요.');
+    }
 
-if (boardData.title.length > MAX_TITLE_LENGTH) {
-    return Dialog('게시글', '제목은 26자 이하로 입력해주세요.');
-}
+    // S3 업로드
+    const uploadFilesToS3 = async () => {
+        const fileUrls = [...existingFiles];
 
-if (!isModifyMode) {
-    const formData = new FormData();
+        for (const file of selectedFiles) {
+            const { ok, data } = await getPresignedUrl(file);
 
-    formData.append(
-        'post',
-        new Blob(
-            [
-                JSON.stringify({
-                    title: boardData.title,
-                    content: boardData.content
-                })
-            ],
-            {
-                type: 'application/json',
+            if (!ok) {
+                return Dialog(
+                    '업로드 실패',
+                    '파일 업로드에 실패했습니다.'
+                );
             }
-        )
-    );
 
-    for (const file of selectedFiles) {
-        formData.append('files', file);
-    }
+            const uploadResponse = await fetch(data.presignedUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': file.type,
+                },
+                body: file,
+            });
 
-    const { ok, status, data } = await createPost(formData);
-
-    console.log('createPost 결과=', {
-        ok,
-        status,
-        data,
-    });
-
-    if (!ok) {
-        throw new Error('서버 응답 오류');
-    }
-
-    if (status === HTTP_CREATED) {
-        localStorage.removeItem('postFileUrl');
-
-        window.location.href =
-            `/html/board.html?id=${data.postId}`;
-    } else {
-        contentHelpElement.textContent =
-            '제목, 내용을 모두 작성해주세요.';
-    }
-} else {
-    const postId = getQueryString('postId');
-
-    const formData = new FormData();
-
-    formData.append(
-        'post',
-        new Blob(
-            [
-                JSON.stringify({
-                    title: boardData.title,
-                    content: boardData.content,
-                    existingFiles: existingFiles
-                }),
-            ],
-            {
-                type: 'application/json',
+            if (!uploadResponse.ok) {
+                return Dialog(
+                    '업로드 실패',
+                    '파일 업로드에 실패했습니다.'
+                );
             }
-        )
-    );
 
-    for (const file of selectedFiles) {
-        formData.append('files', file);
+            fileUrls.push(data.fileUrl);
+        }
+
+        return fileUrls;
+    };
+
+    const fileUrls = await uploadFilesToS3();
+
+    if (!Array.isArray(fileUrls)) {
+        return;
     }
 
-    const { ok, status } = await updatePost(postId, formData);
+    if (!isModifyMode) {
+        const { ok, status, data } = await createPost({
+            title: boardData.title,
+            content: boardData.content,
+            fileUrls,
+        });
 
-    console.log('게시글 수정 결과=', {
-        ok,
-        status,
-    });
+        console.log('createPost 결과=', {
+            ok,
+            status,
+            data,
+        });
 
-    if (!ok) {
-        throw new Error('서버 응답 오류');
-    }
+        if (!ok) {
+            throw new Error('서버 응답 오류');
+        }
 
-    if (status === HTTP_OK) {
-        localStorage.removeItem('postFileUrl');
-
-        window.location.href =
-            `/html/board.html?id=${postId}`;
+        if (status === HTTP_CREATED) {
+            window.location.href = `/html/board.html?id=${data.postId}`;
+        } else {
+            contentHelpElement.textContent =
+                '제목, 내용을 모두 작성해주세요.';
+        }
     } else {
-        Dialog('게시글', '게시글 수정 실패');
+        const postId = getQueryString('postId');
+
+        const { ok, status } = await updatePost(postId, {
+            title: boardData.title,
+            content: boardData.content,
+            fileUrls,
+        });
+
+        console.log('게시글 수정 결과=', {
+            ok,
+            status,
+        });
+
+        if (!ok) {
+            throw new Error('서버 응답 오류');
+        }
+
+        if (status === HTTP_OK) {
+            window.location.href = `/html/board.html?id=${postId}`;
+        } else {
+            Dialog('게시글', '게시글 수정 실패');
+        }
     }
-}
 };
 
 const changeEventHandler = async (event, uid) => {
@@ -319,7 +317,7 @@ const init = async () => {
     const data = await dataResponse.json();
     const modifyId = checkModifyMode();
 
-    let url = data.data.profileFileUrl || data.data.profileImageUrl || null;
+    let url = data.data.profileFileUrl ?? null;
     if (url) {
         url = url.replace(/\\/g, '/');
         if (!url.startsWith('/') && !url.startsWith('blob:')) {

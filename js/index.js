@@ -1,11 +1,10 @@
 import BoardItem from '../component/board/boardItem.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, getServerUrl, prependChild, resolveImageUrl } from '../utils/function.js';
+import { authCheck, prependChild, resolveImageUrl } from '../utils/function.js';
 import { getPosts, searchPosts } from '../services/indexRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-const HTTP_NOT_AUTHORIZED = 401;
 const SCROLL_THRESHOLD = 0.9;
 const ITEMS_PER_LOAD = 5;
 const DEFAULT_SORT = 'recent';
@@ -43,7 +42,7 @@ const setBoardItem = boardData => {
                 data.createdAt,
                 data.title,
                 data.viewCount,
-                data.profileFileUrl || data.profileImageUrl || null,
+                data.profileFileUrl || null,
                 data.nickname,
                 data.commentCount,
                 data.likeCount,
@@ -157,29 +156,26 @@ const addWriteEvent = isLoggedIn => {
 
 const init = async () => {
     try {
-        const res = await fetch(`${getServerUrl()}/auth/check`, { credentials: 'include' });
-        let profileImageUrl = DEFAULT_PROFILE_IMAGE;
+        const res = await authCheck();
+
+        let profileFileUrl = DEFAULT_PROFILE_IMAGE;
         let isLoggedIn = false;
 
         if (res.ok) {
             const data = await res.json();
 
-            let url = data.data.profileFileUrl || data.data.profileImageUrl || null;
-
-            if (url) {
-                url = url.replace(/\\/g, '/');
-
-                if (!url.startsWith('/') && !url.startsWith('blob:')) {
-                    url = '/' + url;
-                }
-            }
-
-            profileImageUrl = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
+            profileFileUrl= resolveImageUrl(
+                data.data.profileFileUrl,
+                DEFAULT_PROFILE_IMAGE
+            );
 
             isLoggedIn = true;
         }
 
-        prependChild(document.body, Header('Community', 0, profileImageUrl, isLoggedIn));
+        prependChild(
+            document.body,
+            Header('Community', 0, profileFileUrl, isLoggedIn)
+        );
 
         updateSortVisibility();
         await loadBoardItems({ reset: true });
