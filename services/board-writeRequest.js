@@ -1,27 +1,49 @@
 import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
-export const createPost = formData => {
+// Presigned URL 발급
+export const getPresignedUrl = file => {
+    const params = new URLSearchParams({
+        fileName: file.name,
+        contentType: file.type,
+    });
+
+    return requestJson(
+        `${getServerUrl()}/files/presigned-url?${params.toString()}`,
+        {
+            method: 'POST',
+            credentials: 'include',
+        }
+    );
+};
+
+// 게시글 작성
+export const createPost = body => {
     return requestJson(`${getServerUrl()}/posts`, {
         method: 'POST',
-        body: formData,
         credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
     });
 };
 
-export const updatePost = (postId, formData) => {
+// 게시글 수정
+export const updatePost = (postId, body) => {
     return requestJson(`${getServerUrl()}/posts/${postId}`, {
         method: 'PATCH',
-        body: formData,
         credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
     });
 };
 
 export const getBoardItem = postId => {
-    const result = requestJson(getServerUrl() + `/posts/${postId}`, {
+    return requestJson(`${getServerUrl()}/posts/${postId}`, {
         method: 'GET',
         credentials: 'include',
     });
-
-    return result;
 };

@@ -153,7 +153,7 @@ const init = async () => {
     const dataResponse = await authCheck();
     authData = await dataResponse.json();
 
-    let url = authData.data.profileFileUrl || authData.data.profileImageUrl || null;
+    let url = authData.data.profileFileUrl || authData.data.profileFileUrl || null;
     if (url) {
         url = url.replace(/\\/g, '/');
         if (!url.startsWith('/') && !url.startsWith('blob:')) {

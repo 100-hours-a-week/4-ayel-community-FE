@@ -1,7 +1,7 @@
 import CommentItem from '../component/comment/comment.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, getServerUrl, prependChild, padTo2Digits, resolveImageUrl } from '../utils/function.js';
+import { authCheck, prependChild, padTo2Digits, resolveImageUrl } from '../utils/function.js';
 import { getPost, deletePost, writeComment, getComments, likePost, unlikePost } from '../services/boardRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
@@ -45,9 +45,9 @@ const setBoardDetail = data => {
     const formattedDate = `${date.getFullYear()}-${padTo2Digits(date.getMonth() + 1)}-${padTo2Digits(date.getDate())} ${padTo2Digits(date.getHours())}:${padTo2Digits(date.getMinutes())}:${padTo2Digits(date.getSeconds())}`;
     createdAtElement.textContent = formattedDate;
 
-    const writerImgUrl = data.profileFileUrl || data.profileImageUrl ||
-        data.writer?.profileFileUrl || data.writer?.profileImageUrl ||
-        data.user?.profileFileUrl || data.user?.profileImageUrl;
+    const writerImgUrl = data.profileFileUrl ||
+        data.writer?.profileFileUrl ||
+        data.user?.profileFileUrl
 
     imgElement.src = resolveImageUrl(writerImgUrl, DEFAULT_PROFILE_IMAGE);
     nicknameElement.textContent = data.nickname;
@@ -64,7 +64,7 @@ const setBoardDetail = data => {
 
             const img = document.createElement('img');
 
-            img.src = getServerUrl() + fileUrl;
+            img.src = fileUrl;
 
             contentImgElement.appendChild(img);
 
@@ -171,11 +171,12 @@ const setBoardComment = (data, myInfo) => {
 
     const comments = Array.isArray(data) ? data : [];
     comments.forEach(comment => {
-        const commentUrl = comment.profileFileUrl || comment.profileImageUrl ||
-            comment.writer?.profileFileUrl || comment.writer?.profileImageUrl ||
-            comment.user?.profileFileUrl || comment.user?.profileImageUrl;
+        const commentUrl =
+            comment.profileFileUrl ||
+            comment.writer?.profileFileUrl ||
+            comment.user?.profileFileUrl;
 
-        comment.profileImageUrl = commentUrl;
+        comment.profileFileUrl = commentUrl;
 
         const item = CommentItem(comment, myInfo?.userId, getQueryString('id'), comment.commentId);
         commentListElement.appendChild(item);
@@ -213,7 +214,7 @@ const inputComment = async () => {
 
 const init = async () => {
     try {
-        const res = await fetch(`${getServerUrl()}/auth/check`, { credentials: 'include' });
+        const res = await authCheck();
         let myInfo = null;
         let profileImage = DEFAULT_PROFILE_IMAGE;
         let isLoggedIn = false;
@@ -229,16 +230,13 @@ const init = async () => {
             commentBtnElement.addEventListener('click', addComment);
             commentBtnElement.disabled = true;
 
-            let url = myInfo.profileFileUrl || myInfo.profileImageUrl || null;
-            if (url) {
-                url = url.replace(/\\/g, '/');
-                if (!url.startsWith('/') && !url.startsWith('blob:')) {
-                    url = '/' + url;
-                }
-            }
+            profileImage = resolveImageUrl(
+                myInfo.profileFileUrl,
+                DEFAULT_PROFILE_IMAGE
+            );
 
-            profileImage = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
             isLoggedIn = true;
+
         } else {
             textareaElement.placeholder = '로그인 후 댓글을 작성할 수 있습니다.';
             textareaElement.disabled = true;
