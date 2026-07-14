@@ -157,7 +157,7 @@ const sendModifyData = async () => {
         profileFileUrl = changeData.profileFileUrl;
     }
 
-    const { ok } = await userModify(
+    const result = await userModify(
         authData.data.userId,
         {
             nickname: changeData.nickname,
@@ -165,13 +165,20 @@ const sendModifyData = async () => {
         }
     );
 
-    if (ok) {
+    console.log('===== PATCH RESULT =====');
+    console.log(result);
+
+    if (result.ok) {
         selectedFile = null;
         changeData.profileFileUrl = profileFileUrl;
 
         saveToastMessage('수정완료');
         location.href = '/html/modifyInfo.html';
     } else {
+        console.log('status =', result.status);
+        console.log('code =', result.code);
+        console.log('body =', result.body);
+
         saveToastMessage('수정실패');
         location.href = '/html/modifyInfo.html';
     }
