@@ -122,9 +122,9 @@ const addBoard = async () => {
             const uploadResponse = await fetch(data.presignedUrl, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': file.type,
+                    'Content-Type': selectedFile.type,
                 },
-                body: file,
+                body: selectedFile,
             });
 
             if (!uploadResponse.ok) {
