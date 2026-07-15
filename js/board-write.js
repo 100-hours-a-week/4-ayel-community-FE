@@ -113,25 +113,27 @@ const addBoard = async () => {
             const { ok, data } = await getPresignedUrl(file);
 
             if (!ok) {
-                return Dialog(
+                Dialog(
                     '업로드 실패',
                     '파일 업로드에 실패했습니다.'
                 );
+                return null;
             }
 
             const uploadResponse = await fetch(data.presignedUrl, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': selectedFile.type,
+                    'Content-Type': file.type,
                 },
-                body: selectedFile,
+                body: file,
             });
 
             if (!uploadResponse.ok) {
-                return Dialog(
+                Dialog(
                     '업로드 실패',
                     '파일 업로드에 실패했습니다.'
                 );
+                return null;
             }
 
             fileUrls.push(data.fileUrl);
@@ -172,26 +174,25 @@ const addBoard = async () => {
     } else {
         const postId = getQueryString('postId');
 
-        const { ok, status } = await updatePost(postId, {
+        const result = await updatePost(postId, {
             title: boardData.title,
             content: boardData.content,
             fileUrls,
         });
 
-        console.log('게시글 수정 결과=', {
-            ok,
-            status,
-        });
+        console.log('===== PATCH RESULT =====');
+        console.log(result);
 
-        if (!ok) {
-            throw new Error('서버 응답 오류');
+        if (!result.ok) {
+            console.log('status =', result.status);
+            console.log('code =', result.code);
+            console.log('body =', result.body);
+
+            Dialog('게시글 수정 실패', JSON.stringify(result.body));
+            return;
         }
 
-        if (status === HTTP_OK) {
-            window.location.href = `/html/board.html?id=${postId}`;
-        } else {
-            Dialog('게시글', '게시글 수정 실패');
-        }
+        window.location.href = `/html/board.html?id=${postId}`;
     }
 };
 
