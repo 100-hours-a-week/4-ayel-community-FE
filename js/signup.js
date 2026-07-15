@@ -105,11 +105,14 @@ const changeEventHandler = async (event, uid) => {
         const helperElement =
             document.querySelector(`.inputBox p[name="${uid}"]`);
 
-        helperElement.textContent = '';
+        if (helperElement) {
+            helperElement.textContent = '';
+        }
     }
 
     observeSignupData();
 };
+
 const inputEventHandler = async (event, uid) => {
     if (uid == 'email') {
         const value = event.target.value;
