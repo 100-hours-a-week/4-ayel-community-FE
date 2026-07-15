@@ -9,7 +9,7 @@ export const getPresignedUrl = file => {
     });
 
     return requestJson(
-        `${getServerUrl()}/files/presigned-url?${params.toString()}`,
+        `${getServerUrl()}/posts/files/presigned-url?${params.toString()}`,
         {
             method: 'POST',
             credentials: 'include',

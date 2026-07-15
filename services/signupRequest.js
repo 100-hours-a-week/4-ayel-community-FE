@@ -19,7 +19,7 @@ export const getPresignedUrl = file => {
     });
 
     return requestJson(
-        `${getServerUrl()}/files/presigned-url?${params.toString()}`,
+        `${getServerUrl()}/users/profile-file/presigned-url?${params.toString()}`,
         {
             method: 'POST',
             credentials: 'include',
