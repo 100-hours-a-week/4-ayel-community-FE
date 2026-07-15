@@ -119,95 +119,97 @@ const sendModifyData = async () => {
         return;
     }
 
-    console.log('1. presigned 발급 시작');
-
-    const { ok, data } = await getPresignedUrl(selectedFile);
-
-    console.log('2.', ok, data);
-
     try {
-        console.log('3. PUT 시작');
+        console.log('===== 수정 시작 =====');
 
-        const uploadResponse = await fetch(data.presignedUrl, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': selectedFile.type,
-            },
-            body: selectedFile,
-        });
-
-        console.log('4. PUT 완료', uploadResponse);
-
-    } catch (e) {
-        console.error('PUT 실패', e);
-        alert(e.message);
-        return;
-    }
-
-    console.log('5. PATCH 시작');
-    if (changeData.nickname === '') {
-        return Dialog(
-            '필수 정보 누락',
-            '닉네임을 입력해주세요.'
-        );
-    }
-
-    let profileFileUrl = null;
-
-    // 새 프로필 선택 시 S3 업로드
-    if (selectedFile) {
-        const { ok, data } = await getPresignedUrl(selectedFile);
-        if (!ok) {
+        if (changeData.nickname === '') {
             return Dialog(
-                '업로드 실패',
-                '업로드에 실패했습니다.'
-            );
-        }
-        const uploadResponse = await fetch(
-            data.presignedUrl, {method: 'PUT',
-                headers: {
-                    'Content-Type': selectedFile.type,
-                },
-                body: selectedFile,
-            });
-
-        if (!uploadResponse.ok) {
-            return Dialog(
-                '업로드 실패',
-                '업로드에 실패했습니다.'
+                '필수 정보 누락',
+                '닉네임을 입력해주세요.'
             );
         }
 
+        let profileFileUrl = changeData.profileFileUrl;
 
-        profileFileUrl = data.fileUrl;
-    } else {
-        profileFileUrl = changeData.profileFileUrl;
-    }
+        // 새 프로필 선택 시
+        if (selectedFile) {
+            console.log('1. Presigned URL 요청');
 
-    const result = await userModify(
-        authData.data.userId,
-        {
+            const presignedResult = await getPresignedUrl(selectedFile);
+            console.log('2. Presigned 결과', presignedResult);
+
+            if (!presignedResult.ok) {
+                console.log('❌ Presigned 실패');
+                return Dialog(
+                    '업로드 실패',
+                    'Presigned URL 발급 실패'
+                );
+            }
+
+            console.log('3. S3 PUT 시작');
+
+            const uploadResponse = await fetch(
+                presignedResult.data.presignedUrl,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': selectedFile.type,
+                    },
+                    body: selectedFile,
+                }
+            );
+
+            console.log('4. PUT 결과', uploadResponse);
+
+            if (!uploadResponse.ok) {
+                console.log('❌ PUT 실패');
+                return Dialog(
+                    '업로드 실패',
+                    'S3 업로드 실패'
+                );
+            }
+
+            profileFileUrl = presignedResult.data.fileUrl;
+        }
+
+        console.log('5. PATCH 요청');
+        console.log({
             nickname: changeData.nickname,
             profileFileUrl,
+        });
+
+        const result = await userModify(
+            authData.data.userId,
+            {
+                nickname: changeData.nickname,
+                profileFileUrl,
+            }
+        );
+
+        console.log('6. PATCH 결과');
+        console.log(result);
+
+        if (!result.ok) {
+            console.log('❌ PATCH 실패');
+            console.log(result);
+            return Dialog(
+                '수정 실패',
+                result.body?.message ?? '알 수 없는 오류'
+            );
         }
-    );
 
-    console.log('===== PATCH RESULT =====');
-    console.log(result);
+        console.log('✅ 수정 성공');
 
-    if (result.ok) {
         selectedFile = null;
         changeData.profileFileUrl = profileFileUrl;
 
         saveToastMessage('수정완료');
         location.href = '/html/modifyInfo.html';
-    } else {
-        console.log('status =', result.status);
-        console.log('code =', result.code);
-        console.log('body =', result.body);
 
-        saveToastMessage('수정실패');
-        location.href = '/html/modifyInfo.html';
+    } catch (e) {
+        console.error('===== 예외 발생 =====');
+        console.error(e);
+        alert(e.message);
     }
 };
 
