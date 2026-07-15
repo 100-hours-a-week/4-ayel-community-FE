@@ -95,14 +95,21 @@ const signupClick = () => {
 const changeEventHandler = async (event, uid) => {
     if (uid == 'profile') {
         const file = event.target.files[0];
-        if (!file) return;
 
-        const helperElement = document.querySelector(`.inputBox p[name="${uid}"]`);
+        if (!file) {
+            return;
+        }
+
+        selectedFile = file;
+
+        const helperElement =
+            document.querySelector(`.inputBox p[name="${uid}"]`);
+
         helperElement.textContent = '';
     }
+
     observeSignupData();
 };
-
 const inputEventHandler = async (event, uid) => {
     if (uid == 'email') {
         const value = event.target.value;
@@ -242,28 +249,12 @@ const observeSignupData = () => {
     }
 };
 
-const uploadProfileImage = () => {
-    document
-        .getElementById('profile')
-        .addEventListener('change', event => {
-
-            const file = event.target.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            selectedFile = file;
-        });
-};
-
 const init = async () => {
     await authCheckReverse();
     prependChild(document.body, Header('커뮤니티', 1));
     observeSignupData();
     addEventForInputElements();
     signupClick();
-    uploadProfileImage();
 };
 
 init();
