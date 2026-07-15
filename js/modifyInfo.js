@@ -119,6 +119,32 @@ const sendModifyData = async () => {
         return;
     }
 
+    console.log('1. presigned 발급 시작');
+
+    const { ok, data } = await getPresignedUrl(selectedFile);
+
+    console.log('2.', ok, data);
+
+    try {
+        console.log('3. PUT 시작');
+
+        const uploadResponse = await fetch(data.presignedUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': selectedFile.type,
+            },
+            body: selectedFile,
+        });
+
+        console.log('4. PUT 완료', uploadResponse);
+
+    } catch (e) {
+        console.error('PUT 실패', e);
+        alert(e.message);
+        return;
+    }
+
+    console.log('5. PATCH 시작');
     if (changeData.nickname === '') {
         return Dialog(
             '필수 정보 누락',
@@ -151,6 +177,7 @@ const sendModifyData = async () => {
                 '업로드에 실패했습니다.'
             );
         }
+
 
         profileFileUrl = data.fileUrl;
     } else {
