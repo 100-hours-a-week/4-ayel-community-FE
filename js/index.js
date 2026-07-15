@@ -28,7 +28,6 @@ const getBoardItem = async (cursorValue = null, limitValue = 5) => {
         ? await getPosts(cursorValue, limitValue)
         : await searchPosts(currentKeyword, cursorValue, limitValue, currentSort);
 
-    console.log('게시글 응답', result);
     if (!result.ok) throw new Error('Failed to load post list.');
     return result.data;
 };
@@ -69,7 +68,7 @@ const loadBoardItems = async ({ reset = false } = {}) => {
         }
 
         const result = await getBoardItem(cursor, ITEMS_PER_LOAD);
-        console.log('result=', result);
+
 
         const items = result.posts ?? [];
         if (!items || items.length === 0) {

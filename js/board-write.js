@@ -93,7 +93,6 @@ const getBoardData = () => {
 
 // 버튼 클릭시 이벤트
 const addBoard = async () => {
-    console.log('addBoard 실행');
 
     const boardData = getBoardData();
 
@@ -155,12 +154,6 @@ const addBoard = async () => {
             fileUrls,
         });
 
-        console.log('createPost 결과=', {
-            ok,
-            status,
-            data,
-        });
-
         if (!ok) {
             throw new Error('서버 응답 오류');
         }
@@ -180,15 +173,8 @@ const addBoard = async () => {
             fileUrls,
         });
 
-        console.log('===== PATCH RESULT =====');
-        console.log(result);
-
         if (!result.ok) {
-            console.log('status =', result.status);
-            console.log('code =', result.code);
-            console.log('body =', result.body);
-
-            Dialog('게시글 수정 실패', JSON.stringify(result.body));
+            Dialog('게시글 수정 실패', '게시글 수정에 실패했습니다.');
             return;
         }
 

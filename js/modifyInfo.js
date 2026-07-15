@@ -1,7 +1,7 @@
-import {getPresignedUrl, } from '../services/signupRequest.js';
+import { getPresignedUrl } from '../services/signupRequest.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import {authCheck, getServerUrl, prependChild, resolveImageUrl, validNickname,} from '../utils/function.js';
+import { authCheck, getServerUrl, prependChild, resolveImageUrl, validNickname } from '../utils/function.js';
 import { userModify, userDelete } from '../services/modifyInfoRequest.js';
 import { requestJson } from '../utils/request.js';
 
@@ -120,7 +120,6 @@ const sendModifyData = async () => {
     }
 
     try {
-        console.log('===== 수정 시작 =====');
 
         if (changeData.nickname === '') {
             return Dialog(
@@ -133,20 +132,16 @@ const sendModifyData = async () => {
 
         // 새 프로필 선택 시
         if (selectedFile) {
-            console.log('1. Presigned URL 요청');
 
             const presignedResult = await getPresignedUrl(selectedFile);
-            console.log('2. Presigned 결과', presignedResult);
 
             if (!presignedResult.ok) {
-                console.log('❌ Presigned 실패');
                 return Dialog(
                     '업로드 실패',
                     'Presigned URL 발급 실패'
                 );
             }
 
-            console.log('3. S3 PUT 시작');
 
             const uploadResponse = await fetch(
                 presignedResult.data.presignedUrl,
@@ -159,10 +154,7 @@ const sendModifyData = async () => {
                 }
             );
 
-            console.log('4. PUT 결과', uploadResponse);
-
             if (!uploadResponse.ok) {
-                console.log('❌ PUT 실패');
                 return Dialog(
                     '업로드 실패',
                     'S3 업로드 실패'
@@ -172,11 +164,6 @@ const sendModifyData = async () => {
             profileFileUrl = presignedResult.data.fileUrl;
         }
 
-        console.log('5. PATCH 요청');
-        console.log({
-            nickname: changeData.nickname,
-            profileFileUrl,
-        });
 
         const result = await userModify(
             authData.data.userId,
@@ -186,19 +173,12 @@ const sendModifyData = async () => {
             }
         );
 
-        console.log('6. PATCH 결과');
-        console.log(result);
-
         if (!result.ok) {
-            console.log('❌ PATCH 실패');
-            console.log(result);
             return Dialog(
                 '수정 실패',
                 result.body?.message ?? '알 수 없는 오류'
             );
         }
-
-        console.log('✅ 수정 성공');
 
         selectedFile = null;
         changeData.profileFileUrl = profileFileUrl;
@@ -207,9 +187,11 @@ const sendModifyData = async () => {
         location.href = '/html/modifyInfo.html';
 
     } catch (e) {
-        console.error('===== 예외 발생 =====');
         console.error(e);
-        alert(e.message);
+        Dialog(
+            '수정 실패',
+            '회원정보 수정에 실패했습니다.'
+        );
     }
 };
 
