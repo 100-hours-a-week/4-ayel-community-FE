@@ -1,7 +1,7 @@
 import BoardItem from '../component/board/boardItem.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, prependChild, resolveImageUrl } from '../utils/function.js';
+import { serverSessionCheck, prependChild, resolveImageUrl } from '../utils/function.js';
 import { getPosts, searchPosts } from '../services/indexRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
@@ -155,7 +155,7 @@ const addWriteEvent = isLoggedIn => {
 
 const init = async () => {
     try {
-        const res = await authCheck();
+        const res = await serverSessionCheck();
 
         let profileFileUrl = DEFAULT_PROFILE_IMAGE;
         let isLoggedIn = false;
