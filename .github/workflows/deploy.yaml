@@ -51,8 +51,6 @@ jobs:
 
     permissions:
       contents: read
-
-      # GitHub Actions가 AWS에 인증할 때 필요한 권한
       id-token: write
 
     runs-on: ubuntu-24.04
@@ -69,35 +67,10 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ap-northeast-2
 
-      # 현재 Target Group을 확인하여 반대편을 다음 배포 대상으로 결정
-      - name: 배포 대상 결정
-        id: target
-        run: |
-          CURRENT_TG=$(aws elbv2 describe-listeners \
-            --listener-arns "${{ vars.HTTPS_LISTENER_ARN }}" \
-            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' \
-            --output text)
-
-          # Green이 활성 상태이면 Blue, 아니면 Green을 배포 대상으로 지정
-          if [[ "$CURRENT_TG" == *"community-fe-green-tg"* ]]; then
-            echo "color=blue" >> "$GITHUB_OUTPUT"
-          else
-            echo "color=green" >> "$GITHUB_OUTPUT"
-          fi
-
-      # SSM을 통해 App EC2 2대의 비활성 환경에 새로운 FE 컨테이너 배포
+      # SSM을 통해 App EC2에 FE Blue Green 환경 배포
       - name: FE Blue Green 환경 배포
         run: |
           bash scripts/ssm-deploy.sh \
             "${{ github.sha }}" \
-            "${{ steps.target.outputs.color }}" \
             "${{ vars.INSTANCE_A }}" \
-            "${{ vars.INSTANCE_C }}" \
             "${{ github.repository }}"
-
-      # 새 Target Group의 Health Check 성공 후 Listener를 해당 Target Group으로 전환
-      - name: FE ALB 전환
-        run: |
-          bash scripts/switch-alb.sh \
-            "${{ steps.target.outputs.color }}" \
-            "${{ vars.HTTPS_LISTENER_ARN }}"
