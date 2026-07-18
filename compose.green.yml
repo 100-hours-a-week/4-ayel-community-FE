@@ -9,7 +9,7 @@ services:
 
     # Green 환경 Host Port 81
     ports:
-      - "81:3000"
+      - "3001:3000"
 
     # 컨테이너 리소스 제한
     cpus: 0.25

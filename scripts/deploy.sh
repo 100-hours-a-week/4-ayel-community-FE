@@ -14,10 +14,10 @@ echo "Target Color: $TARGET_COLOR"
 # 배포 환경에 따라 Compose 파일과 포트 결정
 if [ "$TARGET_COLOR" = "blue" ]; then
   COMPOSE_FILE="compose.blue.yml"
-  TARGET_PORT=80
+  TARGET_PORT=3000
 elif [ "$TARGET_COLOR" = "green" ]; then
   COMPOSE_FILE="compose.green.yml"
-  TARGET_PORT=81
+  TARGET_PORT=3001
 else
   echo "잘못된 Target Color: $TARGET_COLOR"
   exit 1
