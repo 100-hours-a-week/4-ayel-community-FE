@@ -54,7 +54,7 @@ echo "Health Check 시작"
 
 # 새 컨테이너가 정상적으로 응답할 때까지 최대 10회 확인
 for i in {1..10}; do
-  if curl -fsS "http://localhost:${TARGET_PORT}" > /dev/null; then
+  if curl -fsS "http://localhost:${TARGET_PORT}/health" > /dev/null; then
     echo "Health Check 성공"
 
     # FE Nginx upstream 변경
@@ -81,4 +81,19 @@ EOF
 done
 
 echo "Health Check 실패"
+
+echo "컨테이너 로그 출력"
+
+docker compose \
+  -p "$PROJECT_NAME" \
+  -f "$COMPOSE_FILE" \
+  logs --tail=100
+
+echo "실패한 컨테이너 제거"
+
+docker compose \
+  -p "$PROJECT_NAME" \
+  -f "$COMPOSE_FILE" \
+  down
+
 exit 1
