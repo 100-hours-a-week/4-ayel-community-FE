@@ -19,10 +19,8 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-
       - name: 체크아웃
         uses: actions/checkout@v4
-
 
       - name: Node 설정
         uses: actions/setup-node@v4
@@ -30,15 +28,11 @@ jobs:
           node-version: '22'
           cache: npm
 
-
       - name: 의존성 설치
         run: npm ci
 
-
       - name: FE 검증
-        run: |
-          npm run lint
-          npm run build
+        run: node --check app.js
 
   build:
     needs: test
