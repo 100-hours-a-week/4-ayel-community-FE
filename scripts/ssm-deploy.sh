@@ -15,6 +15,7 @@ echo "Image Tag: $IMAGE_TAG"
 COMMAND_ID=$(aws ssm send-command \
   --instance-ids "$INSTANCE_A" \
   --document-name "AWS-RunShellScript" \
+  --timeout-seconds 600 \
   --parameters "commands=[
     \"cd /home/ssm-user/community-app/fe\",
     \"curl -fsSLO https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/compose.blue.yml\",

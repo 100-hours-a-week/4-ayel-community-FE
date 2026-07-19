@@ -1,5 +1,9 @@
 name: FE CI/CD Pipeline
 
+concurrency:
+  group: community-fe-production
+  cancel-in-progress: false
+
 # main 대상 PR에서는 이미지 빌드 검증, main Push 및 Merge 시 이미지 생성 후 배포
 on:
   pull_request:
@@ -11,7 +15,33 @@ on:
       - main
 
 jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+
+      - name: Node 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+
+      - name: 의존성 설치
+        run: npm ci
+
+
+      - name: FE 검증
+        run: |
+          npm run lint
+          npm run build
+
   build:
+    needs: test
     # 실행 환경의 일관성을 위해 Ubuntu 버전 고정
     runs-on: ubuntu-24.04
 
@@ -28,7 +58,7 @@ jobs:
         if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
-          registry: registry.ayelcommunity.site
+          registry: ${{ vars.REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
@@ -38,7 +68,7 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name == 'push' }}
-          tags: registry.ayelcommunity.site/community-fe:${{ github.sha }}
+          tags: ${{ vars.REGISTRY }}/community-fe:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -65,7 +95,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ap-northeast-2
+          aws-region: ${{ vars.AWS_REGION }}
 
       # SSM을 통해 App EC2에 FE Blue Green 환경 배포
       - name: FE Blue Green 환경 배포
