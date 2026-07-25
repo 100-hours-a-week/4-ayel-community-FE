@@ -1,7 +1,7 @@
 import CommentItem from '../component/comment/comment.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, prependChild, padTo2Digits, resolveImageUrl } from '../utils/function.js';
+import { serverSessionCheck, prependChild, padTo2Digits, resolveImageUrl } from '../utils/function.js';
 import { getPost, deletePost, writeComment, getComments, likePost, unlikePost } from '../services/boardRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
@@ -214,7 +214,7 @@ const inputComment = async () => {
 
 const init = async () => {
     try {
-        const res = await authCheck();
+        const res = await serverSessionCheck();
         let myInfo = null;
         let profileImage = DEFAULT_PROFILE_IMAGE;
         let isLoggedIn = false;
@@ -222,7 +222,7 @@ const init = async () => {
         const commentBtnElement = document.querySelector('.commentInputBtn');
         const textareaElement = document.querySelector('.commentInputWrap textarea');
 
-        if (res.status === HTTP_OK) {
+        if (res && res.status === HTTP_OK) {
             const myInfoResult = await res.json();
             myInfo = myInfoResult.data;
 
