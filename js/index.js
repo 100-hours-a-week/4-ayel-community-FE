@@ -7,7 +7,7 @@ import { getPosts, searchPosts } from '../services/indexRequest.js';
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 const SCROLL_THRESHOLD = 0.9;
 const ITEMS_PER_LOAD = 5;
-const DEFAULT_SORT = 'recent';
+const DEFAULT_SORT = 'LATEST';
 let currentKeyword = '';
 let currentSort = DEFAULT_SORT;
 let cursor = null;
@@ -15,21 +15,45 @@ let isEnd = false;
 let isProcessing = false;
 
 const updateSortVisibility = () => {
-    const sortRow = document.querySelector('#searchSortRow');
-    if (!sortRow) return;
-    const isSearching = currentKeyword.trim().length > 0;
-    sortRow.classList.toggle('isHidden', !isSearching);
-    sortRow.setAttribute('aria-hidden', String(!isSearching));
+    const sortRow =
+        document.querySelector('#searchSortRow');
+
+    const sortSelect =
+        document.querySelector('#searchSortSelect');
+
+    if (!sortRow || !sortSelect) return;
+
+    sortRow.classList.remove('isHidden');
+    sortRow.setAttribute('aria-hidden', 'false');
+
+    const isSearching =
+        currentKeyword.trim().length > 0;
+
+    if (isSearching) {
+        currentSort = DEFAULT_SORT;
+        sortSelect.value = DEFAULT_SORT;
+        sortSelect.disabled = true;
+    } else {
+        sortSelect.disabled = false;
+    }
 };
 
 // getBoardItem 함수
 const getBoardItem = async (cursorValue = null, limitValue = 5) => {
-    const result = currentKeyword.trim() === ''
-        ? await getPosts(cursorValue, limitValue)
-        : await searchPosts(currentKeyword, cursorValue, limitValue, currentSort);
+    if (currentKeyword.trim() === '') {
+        return getPosts(
+            currentSort,
+            cursorValue?.sortValue ?? null,
+            cursorValue?.postId ?? null,
+            limitValue
+        );
+    }
 
-    if (!result.ok) throw new Error('Failed to load post list.');
-    return result.data;
+    return searchPosts(
+        currentKeyword,
+        cursorValue?.postId ?? null,
+        limitValue
+    );
 };
 
 const setBoardItem = boardData => {
@@ -67,21 +91,39 @@ const loadBoardItems = async ({ reset = false } = {}) => {
             resetBoardList();
         }
 
-        const result = await getBoardItem(cursor, ITEMS_PER_LOAD);
+        const result =
+            await getBoardItem(
+                cursor,
+                ITEMS_PER_LOAD
+            );
 
+        const pageData =
+            result.data ?? result;
 
-        const items = result.posts ?? [];
-        if (!items || items.length === 0) {
-            isEnd = !result.hasNext;
+        const items =
+            pageData.posts ?? [];
+
+        if (items.length === 0) {
+            isEnd = !pageData.hasNext;
             return;
         }
 
         setBoardItem(items);
-        cursor = result.nextCursor;
-        isEnd = !result.hasNext;
+
+        cursor =
+            pageData.nextCursor;
+
+        isEnd =
+            !pageData.hasNext;
+
     } catch (error) {
-        console.error('Error fetching items:', error);
+        console.error(
+            'Error fetching items:',
+            error
+        );
+
         isEnd = true;
+
     } finally {
         isProcessing = false;
     }
@@ -119,7 +161,6 @@ const addSortEvent = () => {
 
     sortSelect.addEventListener('change', async () => {
         currentSort = sortSelect.value || DEFAULT_SORT;
-        if (currentKeyword.trim().length === 0) return;
         await loadBoardItems({ reset: true });
     });
 };

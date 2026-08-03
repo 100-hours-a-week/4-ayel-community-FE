@@ -1,11 +1,29 @@
 import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
-export const getPosts = (cursor, limit) => {
+export const getPosts = (
+    sort = 'LATEST',
+    cursorSortValue = null,
+    cursorPostId = null,
+    limit = 5,
+) => {
     const query = new URLSearchParams();
 
-    if (cursor !== null) {
-        query.append('cursor', cursor);
+    query.append('sort', sort);
+
+    if (
+        cursorSortValue !== null &&
+        cursorPostId !== null
+    ) {
+        query.append(
+            'cursorSortValue',
+            cursorSortValue,
+        );
+
+        query.append(
+            'cursorPostId',
+            cursorPostId,
+        );
     }
 
     query.append('limit', limit);
