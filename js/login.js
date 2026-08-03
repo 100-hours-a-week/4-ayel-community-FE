@@ -39,7 +39,7 @@ const observeSignupData = () => {
     const helperTextElement = document.querySelector('.helperText');
 
     const isValidEmail = validEmail(email);
-    updateHelperText(helperTextElement, isValidEmail || !email ? '' : '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)');
+    updateHelperText(helperTextElement, isValidEmail || !email ? '' : '*올바른 이메일 주소 형식을 입력해주세요.');
 
     button.disabled = !(email && isValidEmail && password && password.length >= MAX_PASSWORD_LENGTH);
     button.style.backgroundColor = button.disabled ? '#ACA0EB' : '#7F6AEE';
