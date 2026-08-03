@@ -304,23 +304,24 @@ const init = async () => {
     const data = await dataResponse.json();
     const modifyId = checkModifyMode();
 
-    let url = data.data.profileFileUrl ?? null;
-    if (url) {
-        url = url.replace(/\\/g, '/');
-        if (!url.startsWith('/') && !url.startsWith('blob:')) {
-            url = '/' + url;
-        }
-    }
+    const profileImage = resolveImageUrl(
+        data.data.profileFileUrl,
+        DEFAULT_PROFILE_IMAGE
+    );
 
-    const profileImage = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
-
-    prependChild(document.body, Header('커뮤니티', 1, profileImage, true));
+    prependChild(
+        document.body,
+        Header('커뮤니티', 1, profileImage, true)
+    );
 
     if (modifyId) {
         isModifyMode = true;
         modifyData = await getBoardModifyData(modifyId);
 
-        if (parseInt(data.data.userId, 10) !== parseInt(modifyData.userId, 10)) {
+        if (
+            parseInt(data.data.userId, 10) !==
+            parseInt(modifyData.userId, 10)
+        ) {
             Dialog('권한 없음', '권한이 없습니다.', () => {
                 window.location.href = '/';
             });

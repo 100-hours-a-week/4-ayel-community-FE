@@ -138,7 +138,7 @@ const sendModifyData = async () => {
             if (!presignedResult.ok) {
                 return Dialog(
                     '업로드 실패',
-                    'Presigned URL 발급 실패'
+                    '파일 업로드에 실패했습니다.'
                 );
             }
 
@@ -157,7 +157,7 @@ const sendModifyData = async () => {
             if (!uploadResponse.ok) {
                 return Dialog(
                     '업로드 실패',
-                    'S3 업로드 실패'
+                    '파일 업로드에 실패했습니다.'
                 );
             }
 
