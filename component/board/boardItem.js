@@ -4,7 +4,7 @@ const BoardItem = (
     postId,
     date,
     title,
-    content,
+    contentPreview,
     viewCount,
     imgUrl,
     writer,
@@ -36,7 +36,7 @@ const BoardItem = (
 
     const displayWriter = writer && writer.trim() !== '' ? writer : '(알 수 없음)';
 
-    const displayContent = content || '';
+    const displayContent = contentPreview || '';
 
     return `
     <a href="/html/board.html?id=${postId}">

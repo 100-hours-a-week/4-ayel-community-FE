@@ -102,7 +102,7 @@ const setBoardItem = boardData => {
                 data.postId,
                 data.createdAt,
                 data.title,
-                data.content,
+                data.contentPreview,
                 data.viewCount,
                 data.profileFileUrl || null,
                 data.nickname,
