@@ -85,3 +85,17 @@
 
     color: rgba(92, 97, 112, 1);
 }
+
+.contentPreview {
+    margin: -14px 0 18px;
+    padding: 0 20px;
+
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+
+    font-size: 15px;
+    line-height: 19px;
+    color: #8a8d98;
+}

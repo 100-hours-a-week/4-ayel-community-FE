@@ -4,6 +4,7 @@ const BoardItem = (
     postId,
     date,
     title,
+    content,
     viewCount,
     imgUrl,
     writer,
@@ -35,22 +36,31 @@ const BoardItem = (
 
     const displayWriter = writer && writer.trim() !== '' ? writer : '(알 수 없음)';
 
+    const displayContent = content || '';
+
     return `
     <a href="/html/board.html?id=${postId}">
         <div class="boardItem">
             <h2 class="title">${title}</h2>
+
+            ${displayContent
+        ? `<p class="contentPreview">${displayContent}</p>`
+        : ''
+    }
+
             <div class="info">
                 <h3 class="views">좋아요 <b>${likeCount}</b></h3>
                 <h3 class="views">댓글 <b>${commentCount}</b></h3>
                 <h3 class="views">조회수 <b>${viewCount}</b></h3>
                 <p class="date">${formattedDate}</p>
             </div>
+
             <div class="writerInfo">
-            <picture class="img">
-                <img src="${`${profileImageUrl}`}" alt="img">
-            </picture>
-            <h2 class="writer">${displayWriter}</h2>
-        </div>
+                <picture class="img">
+                    <img src="${profileImageUrl}" alt="img">
+                </picture>
+                <h2 class="writer">${displayWriter}</h2>
+            </div>
         </div>
     </a>
 `;
