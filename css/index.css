@@ -61,6 +61,10 @@
     margin-bottom: 8px;
 }
 
+.sortBox:first-child {
+    margin-right: 95px;
+}
+
 .sortBox {
     margin-right: 10px;
     display: inline-flex;

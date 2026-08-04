@@ -8,8 +8,17 @@ const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 const SCROLL_THRESHOLD = 0.9;
 const ITEMS_PER_LOAD = 5;
 const DEFAULT_SORT = 'LATEST';
+const SORT_TYPES = ['LATEST', 'POPULAR', 'LIKE', 'VIEW'];
+const DEFAULT_SEARCH_TYPE = 'TITLE';
+const SEARCH_TYPES = ['TITLE', 'TITLE_CONTENT', 'AUTHOR'];
+const params = new URLSearchParams(window.location.search);
+const requestedSort = params.get('sort');
 let currentKeyword = '';
-let currentSort = DEFAULT_SORT;
+let currentSearchType = DEFAULT_SEARCH_TYPE;
+let currentSort =
+    SORT_TYPES.includes(requestedSort)
+        ? requestedSort
+        : DEFAULT_SORT;
 let cursor = null;
 let isEnd = false;
 let isProcessing = false;
@@ -25,21 +34,47 @@ const updateSortVisibility = () => {
 
     sortRow.classList.remove('isHidden');
     sortRow.setAttribute('aria-hidden', 'false');
+    sortSelect.disabled = false;
+    sortSelect.value = currentSort;
 
-    const isSearching =
-        currentKeyword.trim().length > 0;
+    const popularOption =
+        sortSelect.querySelector(
+            'option[value="POPULAR"]'
+        );
 
-    if (isSearching) {
+    if (popularOption) {
+        popularOption.hidden =
+            currentKeyword.trim().length > 0;
+    }
+
+    if (
+        currentKeyword.trim().length > 0 &&
+        currentSort === 'POPULAR'
+    ) {
         currentSort = DEFAULT_SORT;
-        sortSelect.value = DEFAULT_SORT;
-        sortSelect.disabled = true;
-    } else {
-        sortSelect.disabled = false;
+        sortSelect.value = currentSort;
     }
 };
 
+const updateSortQuery = sort => {
+    const urlParams =
+        new URLSearchParams(window.location.search);
+
+    urlParams.set('sort', sort);
+
+    history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}?${urlParams.toString()}`
+    );
+};
+
 // getBoardItem 함수
-const getBoardItem = async (cursorValue = null, limitValue = 5) => {
+const getBoardItem = async (
+    cursorValue = null,
+    limitValue = 5
+) => {
+
     if (currentKeyword.trim() === '') {
         return getPosts(
             currentSort,
@@ -51,6 +86,9 @@ const getBoardItem = async (cursorValue = null, limitValue = 5) => {
 
     return searchPosts(
         currentKeyword,
+        currentSearchType,
+        currentSort,
+        cursorValue?.sortValue ?? null,
         cursorValue?.postId ?? null,
         limitValue
     );
@@ -135,13 +173,27 @@ const addSearchEvent = () => {
     if (!searchInput || !searchButton) return;
 
     const runSearch = async () => {
-        const trimmedKeyword = searchInput.value.trim();
-        if (trimmedKeyword.length > 0 && trimmedKeyword.length < 2) {
-            Dialog('검색 실패', '검색어는 2글자 이상 입력해주세요.');
+        const trimmedKeyword =
+            searchInput.value.trim();
+
+        if (trimmedKeyword.length < 2) {
+            Dialog(
+                '검색 실패',
+                '검색어는 2글자 이상 입력해주세요.'
+            );
             return;
         }
+
         currentKeyword = trimmedKeyword;
+
+        // 검색에서는 주간 인기글 정렬 제외
+        if (currentKeyword !== '' && currentSort === 'POPULAR') {
+            currentSort = DEFAULT_SORT;
+            updateSortQuery(currentSort);
+        }
+
         updateSortVisibility();
+
         await loadBoardItems({ reset: true });
     };
 
@@ -154,14 +206,66 @@ const addSearchEvent = () => {
     });
 };
 
+const addSearchTypeEvent = () => {
+    const searchTypeSelect =
+        document.querySelector(
+            '#searchTypeSelect'
+        );
+
+    if (!searchTypeSelect) return;
+
+    searchTypeSelect.value =
+        currentSearchType;
+
+    searchTypeSelect.addEventListener(
+        'change',
+        async () => {
+
+            const selectedSearchType =
+                searchTypeSelect.value;
+
+            currentSearchType =
+                SEARCH_TYPES.includes(selectedSearchType)
+                    ? selectedSearchType
+                    : DEFAULT_SEARCH_TYPE;
+
+            // 검색 결과를 보고 있는 경우
+            // 검색 범위 변경 즉시 다시 조회
+            if (currentKeyword.trim() !== '') {
+                await loadBoardItems({
+                    reset: true
+                });
+            }
+        }
+    );
+};
+
 const addSortEvent = () => {
     const sortSelect = document.querySelector('#searchSortSelect');
+
     if (!sortSelect) return;
+
     sortSelect.value = currentSort;
 
     sortSelect.addEventListener('change', async () => {
-        currentSort = sortSelect.value || DEFAULT_SORT;
-        await loadBoardItems({ reset: true });
+        const selectedSort = sortSelect.value || DEFAULT_SORT;
+
+        // 검색 결과에서는 주간 인기글 정렬 제외
+        if (
+            currentKeyword.trim() !== '' &&
+            selectedSort === 'POPULAR'
+        ) {
+            currentSort = DEFAULT_SORT;
+            sortSelect.value = currentSort;
+        } else {
+            currentSort = selectedSort;
+        }
+
+        updateSortQuery(currentSort);
+
+        await loadBoardItems({
+            reset: true
+        });
     });
 };
 
@@ -201,6 +305,10 @@ const init = async () => {
         let profileFileUrl = DEFAULT_PROFILE_IMAGE;
         let isLoggedIn = false;
 
+        if (requestedSort && !SORT_TYPES.includes(requestedSort)) {
+            updateSortQuery(DEFAULT_SORT);
+        }
+
         if (res.ok) {
             const data = await res.json();
 
@@ -221,6 +329,7 @@ const init = async () => {
         await loadBoardItems({ reset: true });
 
         addSearchEvent();
+        addSearchTypeEvent();
         addSortEvent();
         addInfinityScrollEvent();
         addWriteEvent(isLoggedIn);
