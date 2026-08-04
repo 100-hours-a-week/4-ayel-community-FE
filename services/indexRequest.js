@@ -38,15 +38,31 @@ export const getPosts = (
 
 export const searchPosts = (
     keyword,
-    cursor = null,
+    searchType = 'TITLE',
+    sort = 'LATEST',
+    cursorSortValue = null,
+    cursorPostId = null,
     limit = 5,
 ) => {
     const query = new URLSearchParams();
 
     query.append('keyword', keyword);
+    query.append('searchType', searchType);
+    query.append('sort', sort);
 
-    if (cursor !== null) {
-        query.append('cursor', cursor);
+    if (
+        cursorSortValue !== null &&
+        cursorPostId !== null
+    ) {
+        query.append(
+            'cursorSortValue',
+            cursorSortValue,
+        );
+
+        query.append(
+            'cursorPostId',
+            cursorPostId,
+        );
     }
 
     query.append('limit', limit);
