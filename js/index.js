@@ -2,17 +2,19 @@ import BoardItem from '../component/board/boardItem.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import { serverSessionCheck, prependChild, resolveImageUrl } from '../utils/function.js';
-import { getPosts, searchPosts } from '../services/indexRequest.js';
+import { getPosts, searchPosts, getWeeklyPopularPosts, } from '../services/indexRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 const SCROLL_THRESHOLD = 0.9;
 const ITEMS_PER_LOAD = 5;
 const DEFAULT_SORT = 'LATEST';
-const SORT_TYPES = ['LATEST', 'POPULAR', 'LIKE', 'VIEW'];
+const SORT_TYPES = ['LATEST', 'LIKE', 'VIEW'];
 const DEFAULT_SEARCH_TYPE = 'TITLE';
 const SEARCH_TYPES = ['TITLE', 'TITLE_CONTENT', 'AUTHOR'];
 const params = new URLSearchParams(window.location.search);
 const requestedSort = params.get('sort');
+const BOARD_MODES = {ALL: 'ALL', POPULAR: 'POPULAR',};
+let currentBoardMode = BOARD_MODES.ALL;
 let currentKeyword = '';
 let currentSearchType = DEFAULT_SEARCH_TYPE;
 let currentSort =
@@ -36,24 +38,6 @@ const updateSortVisibility = () => {
     sortRow.setAttribute('aria-hidden', 'false');
     sortSelect.disabled = false;
     sortSelect.value = currentSort;
-
-    const popularOption =
-        sortSelect.querySelector(
-            'option[value="POPULAR"]'
-        );
-
-    if (popularOption) {
-        popularOption.hidden =
-            currentKeyword.trim().length > 0;
-    }
-
-    if (
-        currentKeyword.trim().length > 0 &&
-        currentSort === 'POPULAR'
-    ) {
-        currentSort = DEFAULT_SORT;
-        sortSelect.value = currentSort;
-    }
 };
 
 const updateSortQuery = sort => {
@@ -102,7 +86,7 @@ const setBoardItem = boardData => {
                 data.postId,
                 data.createdAt,
                 data.title,
-                data.content,
+                data.contentPreview,
                 data.viewCount,
                 data.profileFileUrl || null,
                 data.nickname,
@@ -168,6 +152,34 @@ const loadBoardItems = async ({ reset = false } = {}) => {
     }
 };
 
+const loadWeeklyPopularPosts = async () => {
+    if (isProcessing) return;
+
+    isProcessing = true;
+
+    try {
+        resetBoardList();
+
+        const result =
+            await getWeeklyPopularPosts();
+
+        const items =
+            result.data ?? result;
+
+        setBoardItem(items);
+
+        cursor = null;
+        isEnd = true;
+    } catch (error) {
+        console.error(
+            '주간 인기글 조회 실패:',
+            error,
+        );
+    } finally {
+        isProcessing = false;
+    }
+};
+
 const addSearchEvent = () => {
     const searchInput = document.querySelector('#searchInput');
     const searchButton = document.querySelector('.searchButton');
@@ -186,12 +198,7 @@ const addSearchEvent = () => {
         }
 
         currentKeyword = trimmedKeyword;
-
-        // 검색에서는 주간 인기글 정렬 제외
-        if (currentKeyword !== '' && currentSort === 'POPULAR') {
-            currentSort = DEFAULT_SORT;
-            updateSortQuery(currentSort);
-        }
+        switchToAllPostsMode();
 
         updateSortVisibility();
 
@@ -233,6 +240,7 @@ const addSearchTypeEvent = () => {
             // 검색 결과를 보고 있는 경우
             // 검색 범위 변경 즉시 다시 조회
             if (currentKeyword.trim() !== '') {
+                switchToAllPostsMode();
                 await loadBoardItems({
                     reset: true
                 });
@@ -249,19 +257,15 @@ const addSortEvent = () => {
     sortSelect.value = currentSort;
 
     sortSelect.addEventListener('change', async () => {
-        const selectedSort = sortSelect.value || DEFAULT_SORT;
+        const selectedSort =
+            sortSelect.value || DEFAULT_SORT;
 
-        // 검색 결과에서는 주간 인기글 정렬 제외
-        if (
-            currentKeyword.trim() !== '' &&
-            selectedSort === 'POPULAR'
-        ) {
-            currentSort = DEFAULT_SORT;
-            sortSelect.value = currentSort;
-        } else {
-            currentSort = selectedSort;
-        }
+        currentSort =
+            SORT_TYPES.includes(selectedSort)
+                ? selectedSort
+                : DEFAULT_SORT;
 
+        switchToAllPostsMode();
         updateSortQuery(currentSort);
 
         await loadBoardItems({
@@ -273,7 +277,15 @@ const addSortEvent = () => {
 // 스크롤 이벤트 추가
 const addInfinityScrollEvent = () => {
     window.addEventListener('scroll', async () => {
-        const hasScrolledToThreshold = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight * SCROLL_THRESHOLD;
+        if (currentBoardMode === BOARD_MODES.POPULAR) {
+            return;
+        }
+
+        const hasScrolledToThreshold =
+            window.scrollY + window.innerHeight >=
+            document.documentElement.scrollHeight *
+            SCROLL_THRESHOLD;
+
         if (hasScrolledToThreshold) {
             loadBoardItems();
         }
@@ -297,6 +309,78 @@ const addWriteEvent = isLoggedIn => {
             });
         }
     });
+};
+
+const addBoardTabEvent = () => {
+    const allPostsTab =
+        document.querySelector('#allPostsTab');
+
+    const weeklyPopularTab =
+        document.querySelector('#weeklyPopularTab');
+
+    if (!allPostsTab || !weeklyPopularTab) return;
+
+    allPostsTab.addEventListener(
+        'click',
+        async () => {
+
+            if (currentBoardMode === BOARD_MODES.ALL) {
+                return;
+            }
+
+            currentKeyword = '';
+            document.querySelector('#searchInput').value = '';
+            switchToAllPostsMode();
+            await loadBoardItems({
+                reset: true,
+            });
+        },
+    );
+
+    weeklyPopularTab.addEventListener(
+        'click',
+        async () => {
+            if (
+                currentBoardMode ===
+                BOARD_MODES.POPULAR
+            ) {
+                return;
+            }
+
+            switchToPopularMode();
+            await loadWeeklyPopularPosts();
+        },
+    );
+};
+
+const switchToAllPostsMode = () => {
+    currentBoardMode = BOARD_MODES.ALL;
+
+    cursor = null;
+    isEnd = false;
+
+    document
+        .querySelector('#allPostsTab')
+        ?.classList.add('active');
+
+    document
+        .querySelector('#weeklyPopularTab')
+        ?.classList.remove('active');
+};
+
+const switchToPopularMode = () => {
+    currentBoardMode = BOARD_MODES.POPULAR;
+
+    cursor = null;
+    isEnd = true;
+
+    document
+        .querySelector('#weeklyPopularTab')
+        ?.classList.add('active');
+
+    document
+        .querySelector('#allPostsTab')
+        ?.classList.remove('active');
 };
 
 const init = async () => {
@@ -334,6 +418,7 @@ const init = async () => {
         addSortEvent();
         addInfinityScrollEvent();
         addWriteEvent(isLoggedIn);
+        addBoardTabEvent();
     } catch (error) {
         console.error('Initialization failed:', error);
     }

@@ -74,3 +74,12 @@ export const searchPosts = (
         },
     );
 };
+
+export const getWeeklyPopularPosts = () => {
+    return requestJson(
+        `${getServerUrl()}/posts/popular/weekly`,
+        {
+            credentials: 'include',
+        },
+    );
+};
