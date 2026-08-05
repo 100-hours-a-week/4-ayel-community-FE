@@ -16,8 +16,8 @@
     flex-direction: column;
     align-items: flex-start; /* 중앙 정렬에서 시작 정렬로 변경 */
     justify-content: center;
-    row-gap: 24px;
-    padding: 40px 0 10px 0;
+    row-gap: 30px;
+    padding: 0px 0 10px 0;
     width: 100%; /* .write 영역이 부모 컨테이너의 전체 너비를 차지하도록 설정 */
 }
 
@@ -31,19 +31,6 @@
     width: 100%; /* h2도 중앙 정렬을 유지하도록 설정 */
 }
 
-.write a {
-    margin-left: auto; /* 링크를 오른쪽으로 밀어붙임 */
-    margin-right: 10px;
-    padding: 7px 32px;
-    border-radius: 18px;
-    background-color: #aca0eb;
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 26px;
-    letter-spacing: -0.02em;
-    color: #ffffff;
-}
-
 .searchRow {
     width: 100%;
     display: flex;
@@ -52,21 +39,67 @@
     gap: 12px;
 }
 
+.boardTab {
+    background: transparent;
+    border: none;
+    padding: 10px 4px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #a9acb8;
+    cursor: pointer;
+}
+
+.boardTab.active {
+    color: #7f6aee;
+    border-bottom: 3px solid #7f6aee;
+}
+
+.boardTabRow {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 100px;
+    margin-bottom: 24px;
+}
+
+.boardTabRow .boardTab {
+    margin: 0;
+    padding: 0px 4px;
+    border-radius: 0;
+    background-color: transparent;
+    border-bottom: 2px solid transparent;
+    font-size: 16px;
+    line-height: 24px;
+    color: #8f929e;
+    text-decoration: none;
+}
+
+.boardTabRow .boardTab:hover {
+    background-color: transparent;
+    color: #7f6aee;
+}
+
+.boardTabRow .boardTab.active {
+    background-color: transparent;
+    border-bottom-color: #7f6aee;
+    color: #7f6aee;
+    font-weight: 700;
+}
+
 .sortRow {
     width: 100%;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     margin-top: -12px;
     margin-bottom: 8px;
+    padding: 0 10px;
 }
 
-.sortBox:first-child {
-    margin-right: 95px;
-}
 
 .sortBox {
-    margin-right: 10px;
+    margin-right: 0;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -169,6 +202,20 @@ b {
     font-weight: 700;
 }
 
-.write a:hover {
-    background-color: #7f6aee; /* 여기서 색상을 원하는 색으로 변경하세요 */
+#writeLink {
+    margin-left: auto;
+    margin-right: 10px;
+    padding: 7px 32px;
+    border-radius: 18px;
+    background-color: #aca0eb;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 26px;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+#writeLink:hover {
+    background-color: #7f6aee;
 }
