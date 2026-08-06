@@ -79,8 +79,9 @@ const setBoardDetail = data => {
 
     let isLiked = data.isLiked ?? false;
     let isLikeLoading = false;
+    let likeCount = Number(data.likeCount);
 
-    likeCountElement.textContent = formatCount(data.likeCount);
+    likeCountElement.textContent = formatCount(likeCount);
     setLikeButtonState(likeButtonElement, isLiked);
 
     likeButtonElement.addEventListener('click', async () => {
@@ -92,8 +93,8 @@ const setBoardDetail = data => {
                 const result = await likePost(data.postId);
                 if (result.ok) {
                     isLiked = true;
-                    const currentCount = Number(likeCountElement.textContent.replace(/,/g, ''));
-                    likeCountElement.textContent = formatCount(currentCount + 1);
+                    likeCount += 1;
+                    likeCountElement.textContent = formatCount(likeCount);
                     setLikeButtonState(likeButtonElement, isLiked);
                 } else if (result.status === 409 || (result.body && result.body.message && result.body.message.includes('이미 좋아요'))) {
                     isLiked = true;
@@ -109,8 +110,8 @@ const setBoardDetail = data => {
                 const result = await unlikePost(data.postId);
                 if (result.ok) {
                     isLiked = false;
-                    const currentCount = Number(likeCountElement.textContent.replace(/,/g, ''));
-                    likeCountElement.textContent = formatCount(Math.max(0, currentCount - 1));
+                    likeCount = Math.max(0, likeCount - 1);
+                    likeCountElement.textContent = formatCount(likeCount);
                     setLikeButtonState(likeButtonElement, isLiked);
                 } else if (result.status === 409 || (result.body && result.body.message && (result.body.message.includes('누르지 않은') || result.body.message.includes('이미 좋아요 취소')))) {
                     isLiked = false;
