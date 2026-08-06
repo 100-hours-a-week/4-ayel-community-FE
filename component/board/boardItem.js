@@ -1,5 +1,19 @@
 import { padTo2Digits, resolveImageUrl } from '../../utils/function.js';
 
+const formatCount = (count) => {
+    const value = Number(count);
+
+    if (value >= 1_000_000) {
+        return `${(value / 1_000_000).toFixed(1).replace('.0', '')}m`;
+    }
+
+    if (value >= 1_000) {
+        return `${(value / 1_000).toFixed(1).replace('.0', '')}k`;
+    }
+
+    return String(value);
+};
+
 const BoardItem = (
     postId,
     date,
@@ -47,14 +61,12 @@ const BoardItem = (
         ? `<p class="contentPreview">${displayContent}</p>`
         : ''
     }
-
             <div class="info">
-                <h3 class="views">좋아요 <b>${likeCount}</b></h3>
-                <h3 class="views">댓글 <b>${commentCount}</b></h3>
-                <h3 class="views">조회수 <b>${viewCount}</b></h3>
+                <h3 class="views">좋아요 <b>${formatCount(likeCount)}</b></h3>
+                <h3 class="views">댓글 <b>${formatCount(commentCount)}</b></h3>
+                <h3 class="views">조회수 <b>${formatCount(viewCount)}</b></h3>
                 <p class="date">${formattedDate}</p>
             </div>
-
             <div class="writerInfo">
                 <picture class="img">
                     <img src="${profileImageUrl}" alt="img">
