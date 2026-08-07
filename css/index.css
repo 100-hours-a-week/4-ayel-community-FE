@@ -52,8 +52,8 @@
 }
 
 .boardTab.active {
-    color: #7f6aee;
-    border-bottom: 3px solid #7f6aee;
+    color: #D39354;
+    border-bottom: 3px solid #D39354;
 }
 
 .boardTabRow {
@@ -79,13 +79,13 @@
 
 .boardTabRow .boardTab:hover {
     background-color: transparent;
-    color: #7f6aee;
+    color: #D39354;
 }
 
 .boardTabRow .boardTab.active {
     background-color: transparent;
-    border-bottom-color: #7f6aee;
-    color: #7f6aee;
+    border-bottom-color: #D39354;
+    color: #D39354;
     font-weight: 700;
 }
 
@@ -114,7 +114,7 @@
 }
 
 .sortIcon {
-    color: #7f6aee;
+    color: #D39354;
 }
 
 .sortLabel {
@@ -137,7 +137,7 @@
 }
 
 .sortSelect:focus-visible {
-    outline: 2px solid #7f6aee;
+    outline: 2px solid #D39354;
     outline-offset: 2px;
     border-radius: 6px;
 }
@@ -175,8 +175,8 @@
 }
 
 .searchInput:focus {
-    border-color: #aca0eb;
-    box-shadow: 0 0 0 3px rgba(172, 160, 235, 0.2);
+    border-color: #D9C7B2;
+    box-shadow: 0 0 0 3px rgba(211, 147, 84, 0.2);
 }
 
 .searchButton {
@@ -189,7 +189,7 @@
     border: none;
     border-radius: 8px;
     background-color: transparent;
-    color: #7f6aee;
+    color: #D39354;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -197,11 +197,11 @@
 }
 
 .searchButton:hover {
-    background-color: rgba(172, 160, 235, 0.15);
+    background-color: rgba(211, 147, 84, 0.15);
 }
 
 .searchButton:focus-visible {
-    outline: 2px solid #7f6aee;
+    outline: 2px solid #D39354;
     outline-offset: 2px;
 }
 
@@ -216,7 +216,7 @@ b {
     padding: 7px 32px;
     white-space: nowrap;
     border-radius: 18px;
-    background-color: #aca0eb;
+    background-color: #CC955F;
     font-size: 16px;
     font-weight: 400;
     line-height: 26px;
@@ -226,5 +226,5 @@ b {
 }
 
 #writeLink:hover {
-    background-color: #7f6aee;
+    background-color: #D5a279;
 }

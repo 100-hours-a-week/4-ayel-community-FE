@@ -108,7 +108,7 @@ a {
 }
 
 .buttons button {
-    background-color: #aca0eb;
+    background-color: #D9C7B2;
     border-radius: 4px;
     border: none;
 
@@ -140,7 +140,7 @@ a {
 }
 
 .toastMessage {
-    background-color: #7f6aee;
+    background-color: #D39354;
     color: #ffffff;
     padding: 10px 20px;
     margin-bottom: 5px;
@@ -187,13 +187,13 @@ a {
     transform: scale(1.1);
 }
 
-.profileUploadButton {
+.profileUploadButton{
     display: block;
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.55);
+    background-color: rgba(211, 147, 84, 0.9);
     color: white;
     padding: 4px 10px;
     border: 1px solid rgba(255, 255, 255, 0.9);

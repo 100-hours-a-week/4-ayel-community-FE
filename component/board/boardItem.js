@@ -1,4 +1,6 @@
-import { padTo2Digits, resolveImageUrl } from '../../utils/function.js';
+import { padTo2Digits, resolveImageUrl, getDefaultProfileImage, } from '../../utils/function.js';
+
+const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
 
 const formatCount = (count) => {
     const value = Number(count);
@@ -45,7 +47,6 @@ const BoardItem = (
 
     const formattedDate = `${year}-${padTo2Digits(month)}-${padTo2Digits(day)} ${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(seconds)}`;
 
-    const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
     const profileImageUrl = resolveImageUrl(imgUrl, DEFAULT_PROFILE_IMAGE);
 
     const displayWriter = writer && writer.trim() !== '' ? writer : '(알 수 없음)';

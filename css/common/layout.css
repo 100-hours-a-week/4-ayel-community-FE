@@ -40,9 +40,11 @@ body {
     height: 100vh;
     top: 0;
     z-index: -1;
-    background: url('/public/background/bg.png');
+    background-image: url('/public/background/bg.jpg');
     background-repeat: no-repeat;
-    background-size: 100vw 100vh;
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
 }
 
 .background::before {
@@ -52,7 +54,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5); /* 어두운 오버레이 색상과 투명도 설정 */
+    background: rgba(0, 0, 0, 0.15); /* 어두운 오버레이 색상과 투명도 설정 */
     /* rgba의 마지막 값(0.5)은 투명도를 의미하며, 0에서 1 사이의 값을 가질 수 있습니다.
        0에 가까울수록 투명해지고, 1에 가까울수록 불투명해집니다. */
 }

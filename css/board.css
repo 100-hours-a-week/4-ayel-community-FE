@@ -43,7 +43,7 @@
     padding: 2px 12px;
 
     border-radius: 8px;
-    border: 1px solid #aca0eb;
+    border: 1px solid #D9C7B2;
     background-color: transparent;
 
     cursor: pointer;
@@ -155,21 +155,21 @@
     width: 116px;
     height: 77px;
     border-radius: 16px;
-    background-color: #d9d9d9;
+    background-color: #E6CB96;
 }
 .commentWrap .likeButton {
     border: none;
     padding: 0;
     cursor: pointer;
-    background-color: #d9d9d9;
+    background-color: #E6CB96;
     font: inherit;
     color: inherit;
 }
 .commentWrap .likeButton.is-active {
-    background-color: #aca0eb;
+    background-color: #d39354;
 }
 .commentWrap .likeButton:focus-visible {
-    outline: 2px solid #7f6aee;
+    outline: 2px solid #D39354;
     outline-offset: 2px;
 }
 
@@ -243,7 +243,7 @@
     letter-spacing: -0.01em;
     cursor: pointer;
 
-    background-color: #aca0eb;
+    background-color: #D9C7B2;
     border: none;
     border-radius: 16px;
 }

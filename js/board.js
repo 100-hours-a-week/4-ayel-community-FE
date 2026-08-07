@@ -1,10 +1,10 @@
 import CommentItem from '../component/comment/comment.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { serverSessionCheck, prependChild, padTo2Digits, resolveImageUrl } from '../utils/function.js';
-import { getPost, deletePost, writeComment, getComments, likePost, unlikePost } from '../services/boardRequest.js';
+import {serverSessionCheck, prependChild, padTo2Digits, resolveImageUrl, getDefaultProfileImage,} from '../utils/function.js';
+import {getPost, deletePost, writeComment, getComments, likePost, unlikePost,} from '../services/boardRequest.js';
 
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
 const MAX_COMMENT_LENGTH = 500;
 const HTTP_NOT_AUTHORIZED = 401;
 const HTTP_OK = 200;
@@ -206,10 +206,10 @@ const inputComment = async () => {
     }
     if (textareaElement.value === '') {
         commentBtnElement.disabled = true;
-        commentBtnElement.style.backgroundColor = '#ACA0EB';
+        commentBtnElement.style.backgroundColor = '#D9C7B2';
     } else {
         commentBtnElement.disabled = false;
-        commentBtnElement.style.backgroundColor = '#7F6AEE';
+        commentBtnElement.style.backgroundColor = '#D39354';
     }
 };
 
@@ -244,7 +244,7 @@ const init = async () => {
             commentBtnElement.disabled = true;
         }
 
-        prependChild(document.body, Header('커뮤니티', 2, profileImage, isLoggedIn));
+        prependChild(document.body, Header('LOVEY DOGGY', 2, profileImage, isLoggedIn));
 
         const pageId = getQueryString('id');
         const pageData = await getBoardDetail(pageId);
