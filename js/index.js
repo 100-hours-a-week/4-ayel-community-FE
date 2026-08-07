@@ -14,6 +14,8 @@ const SEARCH_TYPES = ['TITLE', 'TITLE_CONTENT', 'AUTHOR'];
 const params = new URLSearchParams(window.location.search);
 const requestedSort = params.get('sort');
 const BOARD_MODES = {ALL: 'ALL', POPULAR: 'POPULAR',};
+const BOARD_STATE_KEY = 'boardListState';
+
 let currentBoardMode = BOARD_MODES.ALL;
 let currentKeyword = '';
 let currentSearchType = DEFAULT_SEARCH_TYPE;
@@ -383,6 +385,135 @@ const switchToPopularMode = () => {
         ?.classList.remove('active');
 };
 
+
+const saveBoardState = () => {
+    const boardList =
+        document.querySelector('.boardList');
+
+    if (!boardList) return;
+
+    sessionStorage.setItem(
+        BOARD_STATE_KEY,
+        JSON.stringify({
+            boardMode: currentBoardMode,
+            scrollY: window.scrollY,
+            cursor,
+            isEnd,
+            keyword: currentKeyword,
+            searchType: currentSearchType,
+            sort: currentSort,
+            html: boardList.innerHTML,
+        })
+    );
+};
+
+const addBoardItemClickEvent = () => {
+    document.addEventListener('click', event => {
+        const boardItem =
+            event.target.closest('.boardItem');
+
+        if (!boardItem) return;
+
+        saveBoardState();
+    });
+};
+
+const restoreBoardState = () => {
+    const savedState =
+        sessionStorage.getItem(
+            BOARD_STATE_KEY
+        );
+
+    if (!savedState) {
+        return false;
+    }
+
+    try {
+        const state = JSON.parse(savedState);
+
+        currentBoardMode = state.boardMode ?? BOARD_MODES.ALL;
+
+        currentKeyword = state.keyword ?? '';
+
+        currentSearchType = state.searchType ?? DEFAULT_SEARCH_TYPE;
+
+        currentSort =
+            SORT_TYPES.includes(state.sort)
+                ? state.sort
+                : DEFAULT_SORT;
+
+        cursor = state.cursor ?? null;
+
+        isEnd = state.isEnd ?? false;
+
+        const boardList = document.querySelector('.boardList');
+
+        if (boardList) {
+            boardList.innerHTML = state.html ?? '';
+        }
+
+        const searchInput = document.querySelector('#searchInput');
+
+        if (searchInput) {
+            searchInput.value = currentKeyword;
+        }
+
+        const searchTypeSelect = document.querySelector('#searchTypeSelect');
+
+        if (searchTypeSelect) {
+            searchTypeSelect.value = currentSearchType;
+        }
+
+        const sortSelect =
+            document.querySelector('#searchSortSelect');
+
+        if (sortSelect) {
+            sortSelect.value = currentSort;
+        }
+
+        if (
+            currentBoardMode === BOARD_MODES.POPULAR
+        ) {
+            switchToPopularMode();
+        } else {
+            switchToAllPostsMode();
+
+            // switchToAllPostsMode에서 cursor/isEnd를 초기화하므로 복원
+            cursor = state.cursor ?? null;
+
+            isEnd = state.isEnd ?? false;
+        }
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.scrollTo({
+                    top: state.scrollY ?? 0,
+                    left: 0,
+                    behavior: 'auto',
+                });
+            });
+        });
+
+        sessionStorage.removeItem(
+            BOARD_STATE_KEY
+        );
+
+        return true;
+
+    } catch (error) {
+        console.error(
+            '게시글 목록 상태 복원 실패:',
+            error
+        );
+
+        sessionStorage.removeItem(
+            BOARD_STATE_KEY
+        );
+
+        return false;
+    }
+};
+
 const init = async () => {
     try {
         const res = await serverSessionCheck();
@@ -411,7 +542,15 @@ const init = async () => {
         );
 
         updateSortVisibility();
-        await loadBoardItems({ reset: true });
+
+        const restored =
+            restoreBoardState();
+
+        if (!restored) {
+            await loadBoardItems({
+                reset: true
+            });
+        }
 
         addSearchEvent();
         addSearchTypeEvent();
@@ -419,6 +558,7 @@ const init = async () => {
         addInfinityScrollEvent();
         addWriteEvent(isLoggedIn);
         addBoardTabEvent();
+        addBoardItemClickEvent();
     } catch (error) {
         console.error('Initialization failed:', error);
     }
