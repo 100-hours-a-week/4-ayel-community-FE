@@ -20,6 +20,7 @@ export const getServerUrl = () => {
 export const resolveImageUrl = (url, fallback = null) => {
     if (!url) return fallback;
     if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('/public/')) return url;
     return `${getServerUrl()}${url}`;
 };
 
@@ -126,4 +127,8 @@ export const getQueryString = param => {
 
 export const padTo2Digits = number => {
     return number.toString().padStart(2, '0');
+};
+
+export const getDefaultProfileImage = () => {
+    return '/public/image/profile/default1.png';
 };

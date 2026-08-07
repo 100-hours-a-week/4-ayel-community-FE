@@ -42,7 +42,7 @@ const observeSignupData = () => {
     updateHelperText(helperTextElement, isValidEmail || !email ? '' : '*올바른 이메일 주소 형식을 입력해주세요.');
 
     button.disabled = !(email && isValidEmail && password && password.length >= MAX_PASSWORD_LENGTH);
-    button.style.backgroundColor = button.disabled ? '#ACA0EB' : '#7F6AEE';
+    button.style.backgroundColor = button.disabled ? '#D9C7B2' : '#D39354';
 };
 
 const eventSet = () => {
@@ -96,9 +96,8 @@ const lottieAnimation = type => {
 const init = async () => {
     await authCheckReverse();
     observeSignupData();
-    prependChild(document.body, Header('커뮤니티', 2));
+    prependChild(document.body, Header('LOVEY DOGGY', 2));
     eventSet();
-    localStorage.clear();
 };
 
 init();

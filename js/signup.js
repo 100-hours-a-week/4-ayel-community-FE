@@ -10,12 +10,27 @@ let selectedFile = null;
 let isEmailValid = false;
 let isNicknameValid = false;
 
+const DEFAULT_PROFILE_IMAGES = [
+    '/public/image/profile/default1.png',
+    '/public/image/profile/default2.png',
+    '/public/image/profile/default3.png',
+];
+
+const getRandomDefaultProfileImage = () => {
+    return DEFAULT_PROFILE_IMAGES[
+        Math.floor(
+            Math.random() *
+            DEFAULT_PROFILE_IMAGES.length
+        )
+        ];
+};
+
 const signupData = {
     email: '',
     password: '',
     nickname: '',
     passwordConfirm: '',
-    profileFileUrl: undefined,
+    profileFileUrl: null,
 };
 
 const getSignupData = (event) => {
@@ -32,6 +47,11 @@ const getSignupData = (event) => {
 
 const sendSignupData = async () => {
     const props = { ...signupData };
+
+    if (!selectedFile) {
+        props.profileFileUrl =
+            getRandomDefaultProfileImage();
+    }
 
     if (props.password.length > MAX_PASSWORD_LENGTH) {
         Dialog('비밀번호', '비밀번호는 20자 이하로 입력해주세요.');
@@ -74,9 +94,7 @@ const sendSignupData = async () => {
         await userSignup(props);
 
     if (status === HTTP_CREATED) {
-
         location.href = '/html/login.html';
-
     } else {
 
         Dialog(
@@ -245,16 +263,16 @@ const observeSignupData = () => {
 
     if (!email || !validEmail(email) || !isEmailValid || !password || !validPassword(password) || !nickname || !validNickname(nickname) || !isNicknameValid || !passwordConfirm || password !== passwordConfirm) {
         button.disabled = true;
-        button.style.backgroundColor = '#ACA0EB';
+        button.style.backgroundColor = '#D9C7B2';
     } else {
         button.disabled = false;
-        button.style.backgroundColor = '#7F6AEE';
+        button.style.backgroundColor = '#D39354';
     }
 };
 
 const init = async () => {
     await authCheckReverse();
-    prependChild(document.body, Header('커뮤니티', 1));
+    prependChild(document.body, Header('LOVEY DOGGY', 1));
     observeSignupData();
     addEventForInputElements();
     signupClick();

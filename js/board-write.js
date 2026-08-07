@@ -1,14 +1,13 @@
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, getQueryString, getServerUrl, prependChild, resolveImageUrl } from '../utils/function.js';
+import { authCheck, getQueryString, prependChild, resolveImageUrl, getDefaultProfileImage, } from '../utils/function.js';
 import { createPost, updatePost, getBoardItem, getPresignedUrl } from '../services/board-writeRequest.js';
 
-const HTTP_OK = 200;
 const HTTP_CREATED = 201;
 const MAX_TITLE_LENGTH = 26;
 const MAX_CONTENT_LENGTH = 1500;
 const MAX_TOTAL_FILE_SIZE = 10 * 1024 * 1024;
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
 
 const submitButton = document.querySelector('#submit');
 const titleInput = document.querySelector('#title');
@@ -76,10 +75,10 @@ const observeSignupData = () => {
     const { title, content } = boardWrite;
     if (!title || !content || title === '' || content === '') {
         submitButton.disabled = true;
-        submitButton.style.backgroundColor = '#ACA0EB';
+        submitButton.style.backgroundColor = '#D9C7B2';
     } else {
         submitButton.disabled = false;
-        submitButton.style.backgroundColor = '#7F6AEE';
+        submitButton.style.backgroundColor = '#D39354';
     }
 };
 
@@ -225,8 +224,6 @@ const changeEventHandler = async (event, uid) => {
         // 기존 파일 유지 + 새 파일 추가
         selectedFiles.push(...newFiles);
 
-        const MAX_TOTAL_FILE_SIZE = 10 * 1024 * 1024;
-
         const totalSize = selectedFiles.reduce(
             (sum, file) => sum + file.size,
             0
@@ -311,7 +308,7 @@ const init = async () => {
 
     prependChild(
         document.body,
-        Header('커뮤니티', 1, profileImage, true)
+        Header('LOVEY DOGGY', 1, profileImage, true)
     );
 
     if (modifyId) {

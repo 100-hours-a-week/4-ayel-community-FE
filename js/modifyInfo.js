@@ -1,10 +1,21 @@
 import { getPresignedUrl } from '../services/signupRequest.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, getServerUrl, prependChild, resolveImageUrl, validNickname } from '../utils/function.js';
+import { authCheck, getServerUrl, prependChild, resolveImageUrl, validNickname, getDefaultProfileImage, } from '../utils/function.js';
 import { userModify, userDelete } from '../services/modifyInfoRequest.js';
 import { requestJson } from '../utils/request.js';
 
+const DEFAULT_PROFILE_IMAGES = [
+    '/public/image/profile/default1.png',
+    '/public/image/profile/default2.png',
+    '/public/image/profile/default3.png',
+];
+
+const getRandomDefaultProfileImage = () => {
+    return DEFAULT_PROFILE_IMAGES[
+        Math.floor(Math.random() * DEFAULT_PROFILE_IMAGES.length)
+        ];
+};
 const emailTextElement = document.querySelector('#id');
 const nicknameInputElement = document.querySelector('#nickname');
 const profileInputElement = document.querySelector('#profile');
@@ -13,16 +24,18 @@ const nicknameHelpElement = document.querySelector('.inputBox p[name="nickname"]
 const modifyBtnElement = document.querySelector('#signupBtn');
 const profilePreview = document.querySelector('#profilePreview');
 const removeProfileButton = document.querySelector('#removeProfileButton');
+const isDefaultProfileImage = url => {return DEFAULT_PROFILE_IMAGES.includes(url);};
 
 let authData = null;
 let selectedFile = null;
+let isProfileChanged = false;
 
 const changeData = {
     nickname: '',
     profileFileUrl: null,
 };
 
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
 const HTTP_OK = 200;
 
 const setData = data => {
@@ -50,7 +63,8 @@ const setData = data => {
             );
 
             if (removeProfileButton) {
-                removeProfileButton.style.display = 'flex';
+                removeProfileButton.style.display =
+                    isDefaultProfileImage(url) ? 'none' : 'flex';
             }
         }
     }
@@ -63,18 +77,14 @@ const observeData = () => {
         authData.data.nickname !== changeData.nickname &&
         changeData.nickname !== '';
 
-    const isProfileRemoved =
-        authData.data.profileFileUrl !== null &&
-        changeData.profileFileUrl === null;
-
     const isChanged =
         isNicknameChanged ||
         selectedFile !== null ||
-        isProfileRemoved;
+        isProfileChanged;
 
     modifyBtnElement.disabled = !isChanged;
     modifyBtnElement.style.backgroundColor =
-        isChanged ? '#7F6AEE' : '#ACA0EB';
+        isChanged ? '#D39354' : '#D9C7B2';
 };
 
 const changeEventHandler = async (event, uid) => {
@@ -101,6 +111,7 @@ const changeEventHandler = async (event, uid) => {
         }
 
         selectedFile = file;
+        isProfileChanged = true;
 
         if (profilePreview) {
             profilePreview.src = URL.createObjectURL(file);
@@ -132,7 +143,6 @@ const sendModifyData = async () => {
 
         // 새 프로필 선택 시
         if (selectedFile) {
-
             const presignedResult = await getPresignedUrl(selectedFile);
 
             if (!presignedResult.ok) {
@@ -141,7 +151,6 @@ const sendModifyData = async () => {
                     '파일 업로드에 실패했습니다.'
                 );
             }
-
 
             const uploadResponse = await fetch(
                 presignedResult.data.presignedUrl,
@@ -164,7 +173,6 @@ const sendModifyData = async () => {
             profileFileUrl = presignedResult.data.fileUrl;
         }
 
-
         const result = await userModify(
             authData.data.userId,
             {
@@ -181,6 +189,7 @@ const sendModifyData = async () => {
         }
 
         selectedFile = null;
+        isProfileChanged = false;
         changeData.profileFileUrl = profileFileUrl;
 
         saveToastMessage('수정완료');
@@ -225,20 +234,21 @@ const addEvent = () => {
     }
     if (removeProfileButton) {
         removeProfileButton.addEventListener('click', () => {
+            const defaultProfileImage = getRandomDefaultProfileImage();
+
             if (profilePreview) {
-                profilePreview.src = DEFAULT_PROFILE_IMAGE;
+                profilePreview.src = defaultProfileImage;
             }
 
-            changeData.profileFileUrl = null;
+            changeData.profileFileUrl = defaultProfileImage;
             selectedFile = null;
+            isProfileChanged = true;
 
             if (profileInputElement) {
                 profileInputElement.value = '';
             }
 
-            if (removeProfileButton) {
-                removeProfileButton.style.display = 'none';
-            }
+            removeProfileButton.style.display = 'none';
 
             observeData();
         });
@@ -312,7 +322,7 @@ const init = async () => {
             initialUrl,
             DEFAULT_PROFILE_IMAGE
         );
-        prependChild(document.body, Header('커뮤니티', 1, profileImage, true));
+        prependChild(document.body, Header('LOVEY DOGGY', 1, profileImage, true));
         setData(userResponse.data);
     } else {
         const initialUrl = authData.data.profileFileUrl ?? null;
@@ -324,7 +334,7 @@ const init = async () => {
             DEFAULT_PROFILE_IMAGE
         );
 
-        prependChild(document.body, Header('커뮤니티', 1, profileImage, true));
+        prependChild(document.body, Header('LOVEY DOGGY', 1, profileImage, true));
         setData(authData.data);
     }
 

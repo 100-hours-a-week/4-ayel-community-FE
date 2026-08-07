@@ -1,10 +1,10 @@
 import BoardItem from '../component/board/boardItem.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { serverSessionCheck, prependChild, resolveImageUrl } from '../utils/function.js';
+import { serverSessionCheck, prependChild, resolveImageUrl, getDefaultProfileImage, } from '../utils/function.js';
 import { getPosts, searchPosts, getWeeklyPopularPosts, } from '../services/indexRequest.js';
 
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
 const SCROLL_THRESHOLD = 0.9;
 const ITEMS_PER_LOAD = 5;
 const DEFAULT_SORT = 'LATEST';
@@ -394,10 +394,10 @@ const init = async () => {
             updateSortQuery(DEFAULT_SORT);
         }
 
-        if (res.ok) {
+        if (res && res.ok) {
             const data = await res.json();
 
-            profileFileUrl= resolveImageUrl(
+            profileFileUrl = resolveImageUrl(
                 data.data.profileFileUrl,
                 DEFAULT_PROFILE_IMAGE
             );
@@ -407,7 +407,7 @@ const init = async () => {
 
         prependChild(
             document.body,
-            Header('Community', 0, profileFileUrl, isLoggedIn)
+            Header('LOVEY DOGGY', 0, profileFileUrl, isLoggedIn)
         );
 
         updateSortVisibility();

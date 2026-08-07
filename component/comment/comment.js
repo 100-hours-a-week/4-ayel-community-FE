@@ -1,8 +1,8 @@
-import { padTo2Digits, resolveImageUrl } from '../../utils/function.js';
+import { padTo2Digits, resolveImageUrl, getDefaultProfileImage, } from '../../utils/function.js';
 import Dialog from '../dialog/dialog.js';
 import { deleteComment, updateComment } from '../../services/commentRequest.js';
 
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
 const HTTP_OK = 200;
 
 const CommentItem = (data, writerId, postId, commentId) => {

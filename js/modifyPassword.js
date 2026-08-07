@@ -1,11 +1,10 @@
 import { changePassword } from '../services/modifyPasswordRequest.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, getServerUrl, prependChild, resolveImageUrl, validPassword } from '../utils/function.js';
+import {authCheck, prependChild, resolveImageUrl, validPassword, getDefaultProfileImage,} from '../utils/function.js';
 
 const button = document.querySelector('#signupBtn');
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-const HTTP_OK = 200;
+const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
 
 let authData = null;
 
@@ -21,10 +20,10 @@ const observeData = () => {
 
     if ((hasCurrentPwField && !currentPassword) || !password || !passwordCheck || password !== passwordCheck) {
         button.disabled = true;
-        button.style.backgroundColor = '#ACA0EB';
+        button.style.backgroundColor = '#D9C7B2';
     } else {
         button.disabled = false;
-        button.style.backgroundColor = '#7F6AEE';
+        button.style.backgroundColor = '#D39354';
     }
 };
 
@@ -153,7 +152,7 @@ const init = async () => {
     const dataResponse = await authCheck();
     authData = await dataResponse.json();
 
-    let url = authData.data.profileFileUrl || authData.data.profileFileUrl || null;
+    let url = authData.data.profileFileUrl || null;
     if (url) {
         url = url.replace(/\\/g, '/');
         if (!url.startsWith('/') && !url.startsWith('blob:')) {
@@ -164,7 +163,7 @@ const init = async () => {
     const profileImage = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
 
     button.addEventListener('click', modifyPassword);
-    prependChild(document.body, Header('커뮤니티', 1, profileImage, true));
+    prependChild(document.body, Header('LOVEY DOGGY', 1, profileImage, true));
     addEventForInputElements();
     observeData();
     displayToastFromStorage();

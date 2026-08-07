@@ -8,7 +8,7 @@ header {
     justify-content: center;
     padding: 32px 8px;
 
-    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid #E6D8C8;;
     background-color: #f4f5f7;
     position: absolute;
     top: 0;
@@ -18,14 +18,14 @@ header {
 header h1 {
     grid-area: title;
 
-    font-size: 32px;
+    font-size: 30px;
     line-height: 1.5em;
     letter-spacing: -0.02em;
-    color: #000000;
+    color: #804a11;
 
     text-align: center;
 
-    font-weight: 400;
+    font-weight: 800;
 }
 
 header .back {
@@ -78,7 +78,7 @@ header .drop a {
 }
 
 header .drop a:hover {
-    background: #e9e9e9;
+    background: #F6EFE7;
 }
 
 .none {
