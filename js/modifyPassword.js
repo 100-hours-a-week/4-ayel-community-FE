@@ -1,7 +1,8 @@
 import { changePassword } from '../services/modifyPasswordRequest.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import {authCheck, prependChild, resolveImageUrl, validPassword, getDefaultProfileImage,} from '../utils/function.js';
+import {authCheck, getServerUrl, prependChild, resolveImageUrl, validPassword, getDefaultProfileImage,} from '../utils/function.js';
+import { requestJson } from '../utils/request.js';
 
 const button = document.querySelector('#signupBtn');
 const DEFAULT_PROFILE_IMAGE = getDefaultProfileImage();
@@ -141,10 +142,10 @@ const showToast = (message, duration = 3000, callback = null) => {
 // 토스트 메시지 표시 및 저장소에서 삭제
 const displayToastFromStorage = () => {
     const message = sessionStorage.getItem('toastMessage');
+
     if (message) {
-        showToast(message, 3000, () => {
-            sessionStorage.removeItem('toastMessage');
-        });
+        sessionStorage.removeItem('toastMessage');
+        showToast(message);
     }
 };
 
@@ -152,18 +153,31 @@ const init = async () => {
     const dataResponse = await authCheck();
     authData = await dataResponse.json();
 
-    let url = authData.data.profileFileUrl || null;
-    if (url) {
-        url = url.replace(/\\/g, '/');
-        if (!url.startsWith('/') && !url.startsWith('blob:')) {
-            url = '/' + url;
+    const userResponse = await requestJson(
+        `${getServerUrl()}/users/${authData.data.userId}`,
+        {
+            method: 'GET',
+            credentials: 'include',
         }
-    }
+    );
 
-    const profileImage = resolveImageUrl(url, DEFAULT_PROFILE_IMAGE);
+    const profileFileUrl =
+        userResponse.ok && userResponse.data
+            ? userResponse.data.profileFileUrl
+            : authData.data.profileFileUrl;
+
+    const profileImage = resolveImageUrl(
+        profileFileUrl ?? null,
+        DEFAULT_PROFILE_IMAGE
+    );
 
     button.addEventListener('click', modifyPassword);
-    prependChild(document.body, Header('LOVEY DOGGY', 1, profileImage, true));
+
+    prependChild(
+        document.body,
+        Header('LOVEY DOGGY', 1, profileImage, true)
+    );
+
     addEventForInputElements();
     observeData();
     displayToastFromStorage();
