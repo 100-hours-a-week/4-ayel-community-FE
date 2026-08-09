@@ -297,10 +297,10 @@ const saveToastMessage = message => {
 // 토스트 메시지 표시 및 저장소에서 삭제
 const displayToastFromStorage = () => {
     const message = sessionStorage.getItem('toastMessage');
+
     if (message) {
-        showToast(message, 3000, () => {
-            sessionStorage.removeItem('toastMessage');
-        });
+        sessionStorage.removeItem('toastMessage');
+        showToast(message);
     }
 };
 
